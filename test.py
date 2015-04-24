@@ -4,6 +4,7 @@
 from jsonConfigParser import *
 
 myDict_login = {
+	"title": "Torrent provider login information",
     "type": "object",
     "properties": 
     {
@@ -20,38 +21,94 @@ myDict_login = {
     		"order":2
         }
     },
-    "required": [ "username","password" ],
+    "required": [ "username" ],
     "order":2
 }
 
 myDict_tracker = {
+	"title": "Torrent provider configuration",
     "type": "object",
     "properties": 
     {
         "id": 
         {
-    		"title": "ID",
-    		"type": "string",
+    		"title": "Torrent provider",
+    		"$def": "#/choices/tracker_id",
     		"order":1
         },
     	"login": myDict_login
     },
-    "required": [ "id" ],
 }
 
 myDict_tracker_list = {
+	"title":"Torrent providers",
 	"type":"array",
 	"items": myDict_tracker,
 	"order":1
 }
 
-myDict = {
+myDict_transmission = {
+	"title": "Transmission configuration",
     "type": "object",
     "properties": 
     {
-        "tracker": myDict_tracker_list
+        "server": 
+        {
+    		"title": "Transmission server",
+    		"type": "string",
+    		"format": "hostname",
+    		"order":1
+        },
+        "port": 
+        {
+    		"title": "Transmission port",
+    		"type": "integer",
+    		"minimum":1,
+    		"order":2,
+    		"default": 50762
+        },
+        "username": 
+        {
+    		"title": "Transmission username",
+    		"type": "string",
+    		"order":3
+        },
+        "password": 
+        {
+        	"title": "Transmission password",
+    		"$def": "#/def/password",
+    		"order":4
+        },
+        "slotNumber": 
+        {
+        	"title": "Maximum number of slots",
+    		"type": "integer",
+    		"minimum":1,
+    		"default":6,
+    		"order":5
+        },
     },
-    "required": [ "tracker" ],
+    "required": [ "server","port","username","slotNumber" ],
+    "order":2
+}
+
+myDict = {
+	"title":"Configuration",
+    "type": "object",
+    "properties": 
+    {
+        "tracker": myDict_tracker_list,
+        "transmission": myDict_transmission,
+    },
+    
+    "choices": 
+    {
+    	"tracker_id":
+    	{
+			"t411":"T411",
+			"kickass":"KickAss",
+		}
+    }
 }
 
 config = {"tracker":[{'id':'t411','login':{'username':'niouf','password':'niorf'}}]}
