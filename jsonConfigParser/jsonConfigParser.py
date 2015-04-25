@@ -25,8 +25,6 @@ class jsonConfigParser(dict):
 	def __init__(self,*args):
 		dict.__init__(self,*args)
 		self.update(definitions)
-		if 'choices' not in self.keys():
-			self.update({'choices':{}})
 		jsonschema.Draft4Validator.check_schema(self)
 		self.defPattern = 'def'
 	
@@ -39,25 +37,39 @@ class jsonConfigParser(dict):
 		
 	def cliCreate(self,required=False):
 		#try:
+			# Object
+			########
 			if self.getType() == 'object':
 				result = {}
 				properties = sorted(self['properties'].iteritems(),key=lambda k:k[1]['order'] if 'order' in k[1].keys() else 0)
 				for item in properties:
-					item_required = (item[0] in self['required']) if 'required' in self.keys() else False
-					item[1].update({"choices":self['choices']})
-					result[item[0]] = jsonConfigParser(item[1]).cliCreate(required=item_required)
+					status = ''
+					if 'conditions' in self.keys():
+						conditions = [cond for cond in self['conditions'] if cond['then_prop'] == item[0]]
+						for cond in conditions:
+							if cond['if_prop'] in result.keys() and result[cond['if_prop']] in cond['if_val']:
+								status = cond['then_status']
+								break
+					if status != 'disabled':
+						item_required = (item[0] in self['required']) if 'required' in self.keys() else False
+						result[item[0]] = jsonConfigParser(item[1]).cliCreate(required=item_required)
 				return result
+				
+			# Array
+			#######
 			elif self.getType() == 'array':
 				result = []
 				while True:
-					self['items'].update({"choices":self['choices']})
 					reponse = jsonConfigParser(self['items']).cliCreate()
-					if reponse != '':
+					if not all(val is None for val in reponse.values()):
 						result.append(reponse)
 						if not Prompt.promptYN('Another {0}?'.format(self['title']),default='n'):
 							return result
 					else:
 						return result
+			
+			# Field
+			#######
 			elif self.getType() == 'string' or self.getType() == 'password' or self.getType() == 'choices' 	or self.getType() == 'integer' or self.getType() == 'hostname':
 				default = self['default'] if 'default' in self.keys() else None
 				if self.getType() == 'choices':

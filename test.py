@@ -34,10 +34,28 @@ myDict_tracker = {
         {
     		"title": "Torrent provider",
     		"$def": "#/choices/tracker_id",
-    		"order":1
+    		"order":1,
+    
+			"choices": 
+			{
+				"tracker_id":
+				{
+					"t411":"T411",
+					"kickass":"KickAss",
+				}
+			},
         },
     	"login": myDict_login
     },
+    "conditions":
+	[
+		{ 
+			"if_prop": "id", 
+			"if_val": [None,'kickass'], 
+			'then_prop':'login', 
+			'then_status':'disabled' 
+		}
+	]
 }
 
 myDict_tracker_list = {
@@ -99,15 +117,6 @@ myDict = {
     {
         "tracker": myDict_tracker_list,
         "transmission": myDict_transmission,
-    },
-    
-    "choices": 
-    {
-    	"tracker_id":
-    	{
-			"t411":"T411",
-			"kickass":"KickAss",
-		}
     }
 }
 
