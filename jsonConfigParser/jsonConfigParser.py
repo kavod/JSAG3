@@ -121,12 +121,13 @@ class jsonConfigParser(dict):
 			properties = sorted(self['properties'].iteritems(),key=lambda k:k[1]['order'] if 'order' in k[1].keys() else 0)
 			for key,item in properties:
 				if jsonConfigParser(item).getType() in SIMPLE_TYPES:
-					value = json[key]
+					line = jsonConfigParser(item).display(json[key],width=width,ident='')
 				elif jsonConfigParser(item).getType() == 'array':
 					value = '{0} managed'.format(str(len(json[key])))
+					line = ("{0:" + str(width)+"} - {1}").format(item['title'],value)
 				else:
 					value = 'Managed'
-				line = ("{0:" + str(width)+"} - {1}").format(item['title'],value)
+					line = ("{0:" + str(width)+"} - {1}").format(item['title'],value)
 				choices.append(line)
 			reponse = Prompt.promptChoice(str(self['title']),choices,warning='',selected=[],default = None,mandatory=True,multi=False)
 		
