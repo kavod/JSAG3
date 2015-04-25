@@ -18,10 +18,13 @@ definitions =  {
 		"file": {
 			"type":"string"
 		},
+		"hidden": {
+			"type":"string"
+		},
 	}
 }
 
-SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean']
+SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file']
 
 class jsonConfigParser(dict):
 	def __init__(self,*args):
@@ -104,6 +107,8 @@ class jsonConfigParser(dict):
 						return result
 					except:
 						warning='Incorrect answer'
+			elif self.getType() == 'hidden':
+				return self['default']
 			else:
 				raise Exception
 			"""except:
@@ -125,6 +130,8 @@ class jsonConfigParser(dict):
 				elif jsonConfigParser(item).getType() == 'array':
 					value = '{0} managed'.format(str(len(json[key])))
 					line = ("{0:" + str(width)+"} - {1}").format(item['title'],value)
+				elif jsonConfigParser(item).getType() == 'hidden':
+					continue
 				else:
 					value = 'Managed'
 					line = ("{0:" + str(width)+"} - {1}").format(item['title'],value)
@@ -166,6 +173,11 @@ class jsonConfigParser(dict):
 			result = self.cliCreate()
 			Prompt.print_question(self['title'] + ' changed!')
 			return result
+		
+		# Hidden
+		#########
+		elif self.getType() == 'hidden':
+			return self['default']
 				
 	def display(self,json,width=None,ident=' '):
 		# object
@@ -197,6 +209,8 @@ class jsonConfigParser(dict):
 						value = '{0} managed'.format(str(len(item[prop[0]])))
 						line = ("{0} {1:" + str(width)+"} - {2}").format(str(ident),prop[1]['title'],value)
 						lines.append(line)
+					elif jsonConfigParser(prop[1]).getType() == 'hidden':
+						continue
 					else:
 						if prop[0] in item.keys():
 							lines.append(jsonConfigParser(prop[1]).display(item[prop[0]],width=width,ident=str(ident)+str(' ')))
@@ -207,6 +221,12 @@ class jsonConfigParser(dict):
 		elif self.getType() in SIMPLE_TYPES:
 			value = json if self.getType() != 'password' else '****'
 			return ("{0}{1:" + str(width)+"} - {2}").format(str(ident),self['title'],value)
+			
+		# Hidden
+		#########
+		elif self.getType() == 'hidden':
+			return ''
+			
 		else:
 			raise Exception(self.getType())
 			
