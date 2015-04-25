@@ -67,12 +67,7 @@ def globalPrompt(custo,warning=''):
 		
 def promptSingle(question,choix=[],password=False,mandatory=False,default=None,warning=''):
 	if len(choix)>0:
-		if isinstance(choix,list):
-			mydict = {}
-			for i,j in enumerate(choix):
-				mydict.update({i:j})
-		else:
-			mydict = choix
+		mydict = choix
 		reponse = promptChoice(question,selected=[],warning=str(warning),choix=mydict,mandatory=mandatory,default=default)
 	else:
 		reponse = promptText(question,selected=[],warning=str(warning),password=password,mandatory=mandatory,default=default)
@@ -105,12 +100,7 @@ def promptMulti(question,choix=[],password=False,mandatory=False):
 		else:
 			selected = ""
 		if len(choix)>0:
-			if isinstance(choix,list):
-				mydict = {}
-				for i,j in enumerate(choix):
-					mydict.update({i:j})
-			else:
-				mydict = choix
+			mydict = choix
 			str_question = question + ' (Press "Enter" to achieve entry)' if len(result) > 0 or not mandatory else question
 			reponse = promptChoice(str_question,warning=warning,selected=result,choix=mydict,mandatory=(mandatory and len(result)<1),default=None,multi=True)
 			if reponse is None:
@@ -175,25 +165,23 @@ def promptChoice(question,choix,warning='',selected=[],default = None,mandatory=
 	"""
 	str_is_selected = 	'[SELECTED]'
 	str_not_selected = 	'[        ]'
-	choix = sorted(choix.items())
-	warning = ''
 	while True:	
 		str_choices = ''
-		width = len(max([i[1] for i in choix], key=len))
+		width = len(max(choix, key=len))
 		
 		if default is None and not mandatory:
 			str_question = "{0} [keep blank for none]".format(str(question))
 		else:
 			str_question = question
 		for i,val in enumerate(choix):
-			if default is not None and str(val[0]) == str(default):
+			if default is not None and i == default:
 				str_question = "{0} [{1} by default]".format(str(question),str(i+1))
 			if multi:
 				str_selected = str_is_selected if val[0] in selected else str_not_selected
 			else:
 				str_selected = ''
-			str_choices += ("{0:2}: {1:" + str(width) + "} {2}\n").format(str(i+1),val[1],str_selected)
-		print_question(str_question,warning)
+			str_choices += (("{0:2}: {1:" + str(width) + "} {2}").format(str(i+1),str(val),str_selected)).replace('\n','\n    ') + '\n'
+		print_question(str_question,warning=warning)
 		print str_choices,
 		reponse = prompt()
 		if reponse == '':
@@ -208,7 +196,7 @@ def promptChoice(question,choix,warning='',selected=[],default = None,mandatory=
 		elif int(reponse) < 1 or int(reponse) > len(choix):
 			warning = "Incorrect answer"
 		else:
-			return choix[int(reponse)-1][0]
+			return int(reponse)-1
 			
 def prompt(password=False):
 	invite = "> "
