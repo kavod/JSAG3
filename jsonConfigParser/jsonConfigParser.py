@@ -21,6 +21,8 @@ definitions =  {
 	}
 }
 
+SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean']
+
 class jsonConfigParser(dict):
 	def __init__(self,*args):
 		dict.__init__(self,*args)
@@ -70,7 +72,7 @@ class jsonConfigParser(dict):
 			
 			# Field
 			#######
-			elif self.getType() == 'string' or self.getType() == 'password' or self.getType() == 'choices' 	or self.getType() == 'integer' or self.getType() == 'hostname':
+			elif self.getType() in SIMPLE_TYPES:
 				default = self['default'] if 'default' in self.keys() else None
 				if self.getType() == 'choices':
 					matchObj = re.match(r'^#/choices/(\w+)$',self['$def'],re.M)
@@ -80,14 +82,17 @@ class jsonConfigParser(dict):
 					
 				warning = ''
 				while True:
-					result = Prompt.promptSingle(
-								self['title'],
-								choix=choices,
-								password=(self.getType() == 'password'),
-								mandatory=required,
-								default=default,
-								warning=warning
-								)
+					if self.getType() == 'boolean':
+						result = Prompt.promptYN(self['title'],default=default)
+					else:
+						result = Prompt.promptSingle(
+									self['title'],
+									choix=choices,
+									password=(self.getType() == 'password'),
+									mandatory=required,
+									default=default,
+									warning=warning
+									)
 					if result == "" or result is None:
 						return default
 					try:
