@@ -230,7 +230,8 @@ myDict = {
 
 config = {'transmission': {'username': 'niouf', 'slotNumber': 6, 'password': 'niorf', 'port': 50762, 'server': 'front142.sdbx.co'}, 'transfer': '/volume/Series', 'tracker': [{'id': 'kickass'}, {'login': {'username': 'Niouf', 'password': 'moihlijh'}, 'id': 't411'}], 'smtp': {'enable': True, 'conf': {'username': 'niouf', 'sender': 'niouf@niouf.fr', 'ssltls': True, 'server': 'smtp.gmail.com', 'password': 'niorf', 'port': 587}}}
 
-cp = jsonConfigParser(myDict)
+#cp = jsonConfigParser(myDict)
+cp = loadParserFromFile('config.jschem')
 cp.validate(config)
 myValue = jsonConfigValue(cp,value=None,filename='config.json')
 myValue.load()

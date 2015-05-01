@@ -28,6 +28,16 @@ definitions =  {
 
 SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file']
 
+def loadParserFromFile(filename):
+	if not isinstance(filename,str):
+		raise TypeError("Filename must be a string. {0} entered".format(str(filename)))
+	try:
+		with open(filename) as data_file:    
+			confschema = json.load(data_file)
+	except:
+		raise Exception("Cannot parse {0}".format(str(filename)))
+	return jsonConfigParser(confschema)
+	
 class jsonConfigParser(dict):
 	def __init__(self,*args):
 		self.defPattern = 'def'
