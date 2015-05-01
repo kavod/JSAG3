@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 #encoding:utf-8
 
+import os
 import sys
 import json
 import jsonschema
 import getpass
 import re
+import copy
 import Prompt
 
 definitions =  {
@@ -28,10 +30,20 @@ SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','fi
 
 class jsonConfigParser(dict):
 	def __init__(self,*args):
+		self.defPattern = 'def'
 		dict.__init__(self,*args)
+		if self.getType() == 'object' and 'properties' in self.keys():
+			for item in self['properties'].iteritems():
+				newitem = dict(item[1])
+				newitem.update(definitions)
+				self['properties'][item[0]] = jsonConfigParser(newitem)
+		elif self.getType() == 'array' and 'items' in self.keys():
+			newitem = dict(self['items'])
+			newitem.update(definitions)
+			self['items'] = jsonConfigParser(newitem)
+				
 		self.update(definitions)
 		jsonschema.Draft4Validator.check_schema(self)
-		self.defPattern = 'def'
 	
 	def __deepcopy__(self,memo):
 		newone = type(self)(dict(self))
@@ -41,80 +53,78 @@ class jsonConfigParser(dict):
 		jsonschema.validate(json,self)
 		
 	def cliCreate(self,required=False):
-		#try:
-			# Object
-			########
-			if self.getType() == 'object':
-				result = {}
-				properties = sorted(self['properties'].iteritems(),key=lambda k:k[1]['order'] if 'order' in k[1].keys() else 0)
-				for item in properties:
-					status = ''
-					if 'conditions' in self.keys():
-						conditions = [cond for cond in self['conditions'] if cond['then_prop'] == item[0]]
-						for cond in conditions:
-							if cond['if_prop'] in result.keys() and result[cond['if_prop']] in cond['if_val']:
-								status = cond['then_status']
-								break
-					if status != 'disabled':
-						item_required = (item[0] in self['required']) if 'required' in self.keys() else False
-						result[item[0]] = jsonConfigParser(item[1]).cliCreate(required=item_required)
-				return result
-				
-			# Array
-			#######
-			elif self.getType() == 'array':
-				result = []
-				while True:
-					reponse = jsonConfigParser(self['items']).cliCreate()
-					if not all(val is None for val in reponse.values()):
-						result.append(reponse)
-						if not Prompt.promptYN('Another {0}?'.format(self['title']),default='n'):
-							return result
-					else:
-						return result
+		# Object
+		########
+		if self.getType() == 'object':
+			result = {}
+			properties = sorted(self['properties'].iteritems(),key=lambda k:k[1]['order'] if 'order' in k[1].keys() else 0)
+			for item in properties:
+				status = ''
+				if 'conditions' in self.keys():
+					conditions = [cond for cond in self['conditions'] if cond['then_prop'] == item[0]]
+					for cond in conditions:
+						if ( ( cond['if_prop'] in result.keys() and result[cond['if_prop']] in cond['if_val']) or
+								( cond['if_prop'] not in result.keys() and None in cond['if_val'] ) ):
+							status = cond['then_status']
+							break
+				if status != 'disabled':
+					item_required = (item[0] in self['required']) if 'required' in self.keys() else False
+					pre_result = item[1].cliCreate(required=item_required)
+					if pre_result is not None:
+						result[item[0]] = pre_result
+			return result
 			
-			# Field
-			#######
-			elif self.getType() in SIMPLE_TYPES:
-				default = self['default'] if 'default' in self.keys() else None
-				if self.getType() == 'choices':
-					matchObj = re.match(r'^#/choices/(\w+)$',self['$def'],re.M)
-					choices = self['choices'][matchObj.group(1)]
-					default = [item[0] for item in enumerate(self['choices']) if items[1] == default] if default is not None else None
-				else:
-					choices = {}
-					
-				warning = ''
-				while True:
-					if self.getType() == 'boolean':
-						result = Prompt.promptYN(self['title'],default=default)
-					else:
-						result = Prompt.promptSingle(
-									self['description'],
-									choix=choices.values(),
-									password=(self.getType() == 'password'),
-									mandatory=required,
-									default=default,
-									warning=warning
-									)
-					if result == "" or result is None:
-						return default
-					if self.getType() == 'choices':
-						result = choices.keys()[result]
-					try:
-						result = self._convert(result)
-						self.validate(result)
+		# Array
+		#######
+		elif self.getType() == 'array':
+			result = []
+			while True:
+				reponse = self['items'].cliCreate()
+				if not all(val is None for val in reponse.values()):
+					result.append(reponse)
+					if not Prompt.promptYN('Another {0}?'.format(self['title']),default='n'):
 						return result
-					except:
-						warning='Incorrect answer'
-			elif self.getType() == 'hidden':
-				return self['default']
+				else:
+					return result
+		
+		# Field
+		#######
+		elif self.getType() in SIMPLE_TYPES:
+			default = self['default'] if 'default' in self.keys() else None
+			if self.getType() == 'choices':
+				matchObj = re.match(r'^#/choices/(\w+)$',self['$def'],re.M)
+				choices = self['choices'][matchObj.group(1)]
+				default = [item[0] for item in enumerate(self['choices']) if items[1] == default] if default is not None else None
 			else:
-				raise Exception
-			"""except:
-				print "Unknown"
-				print self
-				sys.exit()"""
+				choices = {}
+				
+			warning = ''
+			while True:
+				if self.getType() == 'boolean':
+					result = Prompt.promptYN(self['title'],default=default)
+				else:
+					result = Prompt.promptSingle(
+								self['description'],
+								choix=choices.values(),
+								password=(self.getType() == 'password'),
+								mandatory=required,
+								default=default,
+								warning=warning
+								)
+				if result == "" or result is None:
+					return default
+				if self.getType() == 'choices':
+					result = choices.keys()[result]
+				try:
+					result = self._convert(result)
+					self.validate(result)
+					return result
+				except:
+					warning='Incorrect answer'
+		elif self.getType() == 'hidden':
+			return self['default']
+		else:
+			raise Exception
 				
 	def cliChange(self,json):
 		self.validate(json)
@@ -125,12 +135,12 @@ class jsonConfigParser(dict):
 			width = len(max([i['title'] for i in self['properties'].values()], key=len))
 			properties = sorted(self['properties'].iteritems(),key=lambda k:k[1]['order'] if 'order' in k[1].keys() else 0)
 			for key,item in properties:
-				if jsonConfigParser(item).getType() in SIMPLE_TYPES:
-					line = jsonConfigParser(item).display(json[key],width=width,ident='')
-				elif jsonConfigParser(item).getType() == 'array':
+				if item.getType() in SIMPLE_TYPES:
+					line = item.display(json[key],width=width,ident='')
+				elif item.getType() == 'array':
 					value = '{0} managed'.format(str(len(json[key])))
 					line = ("{0:" + str(width)+"} - {1}").format(item['title'],value)
-				elif jsonConfigParser(item).getType() == 'hidden':
+				elif item.getType() == 'hidden':
 					continue
 				else:
 					value = 'Managed'
@@ -138,7 +148,7 @@ class jsonConfigParser(dict):
 				choices.append(line)
 			reponse = Prompt.promptChoice(str(self['title']),choices,warning='',selected=[],default = None,mandatory=True,multi=False)
 		
-			changed_item = jsonConfigParser(properties[reponse][1])
+			changed_item = properties[reponse][1]
 			result = changed_item.cliChange(json[properties[reponse][0]])
 			json.update({properties[reponse][0]:result})
 			return json
@@ -151,12 +161,12 @@ class jsonConfigParser(dict):
 			choices = ['Add','Delete','Reset all']
 			reponse = Prompt.promptChoice('** Managed {0}'.format(self['title']),choices,warning=warning,selected=[],default = None,mandatory=True,multi=False)
 			if reponse == 0: # Add
-				json.append(jsonConfigParser(self['items']).cliCreate())
+				json.append(self['items'].cliCreate())
 				return json
 			elif reponse == 1: # Delete
 				result = Prompt.promptSingle(
 						'Which {0} must be deleted?'.format(self['items']['title']),
-						choix=[jsonConfigParser(self['items']).display(item) for item in json],
+						choix=[self['items'].display(item) for item in json],
 						password=False,
 						mandatory=True,
 						default=None,
@@ -190,7 +200,7 @@ class jsonConfigParser(dict):
 				width = len(max([item['title'] for item in self['properties'].values()],key=len))
 			for key,item in sorted(self['properties'].items(),key=lambda k:k[1]['order']):
 				if key in json.keys():
-					lines.append(str(ident)+' '+jsonConfigParser(item).display(json[key],width=width,ident=str(ident)+' '))
+					lines.append(str(ident)+' '+item.display(json[key],width=width,ident=str(ident)+' '))
 			lines = '\n'.join(lines)
 			return lines
 		# array
@@ -203,17 +213,17 @@ class jsonConfigParser(dict):
 				if width is None:
 					width = len(max([prop['title'] for prop in self['items']['properties'].values()],key=len))
 				for prop in sorted(self['items']['properties'].items(),key=lambda k:k[1]['order']):
-					if jsonConfigParser(prop[1]).getType() in SIMPLE_TYPES:
-						lines.append(jsonConfigParser(prop[1]).display(item[prop[0]],width=width,ident=str(ident)+str(' ')))
-					elif jsonConfigParser(prop[1]).getType() == 'array':
+					if prop[1].getType() in SIMPLE_TYPES:
+						lines.append(prop[1].display(item[prop[0]],width=width,ident=str(ident)+str(' ')))
+					elif prop[1].getType() == 'array':
 						value = '{0} managed'.format(str(len(item[prop[0]])))
 						line = ("{0} {1:" + str(width)+"} - {2}").format(str(ident),prop[1]['title'],value)
 						lines.append(line)
-					elif jsonConfigParser(prop[1]).getType() == 'hidden':
+					elif prop[1].getType() == 'hidden':
 						continue
 					else:
 						if prop[0] in item.keys():
-							lines.append(jsonConfigParser(prop[1]).display(item[prop[0]],width=width,ident=str(ident)+str(' ')))
+							lines.append(prop[1].display(item[prop[0]],width=width,ident=str(ident)+str(' ')))
 				lines.append('')
 			return lines
 		# Field
@@ -247,20 +257,3 @@ class jsonConfigParser(dict):
 		if self.getType() == "integer":
 			return int(value)
 		return value
-			
-		
-class jsonConfigValue(dict):
-	def __init__(self,configParser,value=None):
-		if isinstance(configParser,jsonConfigParser):
-			self.configParser = configParser
-		elif isinstance(configParser,dict):
-			self.configParser = jsonConfigParser(configParser)
-		else:
-			raise TypeError("First argument must be a jsonConfigParser instance")
-
-		if value is None:
-			self = {}
-		else:
-			self.configParser.validate(value)
-			self = value
-		

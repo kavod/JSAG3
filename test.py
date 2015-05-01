@@ -232,7 +232,14 @@ config = {'transmission': {'username': 'niouf', 'slotNumber': 6, 'password': 'ni
 
 cp = jsonConfigParser(myDict)
 cp.validate(config)
-
-value = jsonConfigValue(cp,config)
-#print cp.cliCreate()
-print cp.cliChange(config)
+myValue = jsonConfigValue(cp,value=None,filename='config.json')
+myValue.load()
+#print myValue
+#myValue.setValue(config)
+#myValue.save()
+#print myValue
+config1 = {'transmission': {'username': 'niouf', 'slotNumber': 7,  'port': 50762, 'server': 'front142.sdbx.co'}, 'transfer': '/volume/Series', 'tracker': [{'login': {'username': 'Niouf'}, 'id': 't411'}], 'smtp': {'enable': True, 'conf': {'username': 'niouf', 'sender': 'niouf@niouf.fr', 'ssltls': True, 'server': 'smtp.gmail.com', 'password': 'niorf', 'port': 587}}}
+myValue.update(config1)
+myValue.cliCreate()
+#print cp.cliChange(config)
+print myValue
