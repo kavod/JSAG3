@@ -54,13 +54,13 @@ class jsonConfigValue(dict):
 		self.filename = filename
 		
 	def setValue(self,value):
-		self.configParser.validate(value)
 		result = self.merge({},value)
+		self.configParser.validate(result)
 		dict.__init__(self,result)		
 		
 	def update(self,value):
-		self.configParser.validate(value)
-		result = self.merge(copy.copy(self),value)
+		result = self.merge(copy.deepcopy(self),value)
+		self.configParser.validate(result)
 		for key in result.keys():
 			self[key] = result[key]
 			
