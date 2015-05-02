@@ -224,6 +224,20 @@ myDict = {
         	"order":3,
         },
         "smtp": myDict_smtp,
+        "keywords": 
+        {
+        	"items": 
+        	{
+        		"order": 1, 
+        		"type": "string", 
+        		"description": "Keyword", 
+        		"title": "Keyword"
+        	}, 
+        	"order": 5, 
+        	"type": "array", 
+        	"description": "Search keywords", 
+        	"title": "Search keywords"
+        },
     },
     "required":['tracker','transmission','smtp']
 }

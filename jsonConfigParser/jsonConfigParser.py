@@ -90,12 +90,18 @@ class jsonConfigParser(dict):
 			result = []
 			while True:
 				reponse = self['items'].cliCreate()
-				if not all(val is None for val in reponse.values()):
-					result.append(reponse)
-					if not Prompt.promptYN('Another {0}?'.format(self['title']),default='n'):
+				if self['items'].getType() in SIMPLE_TYPES:
+					if reponse is not None:
+						result.append(reponse)
+					else:
 						return result
-				else:
-					return result
+				elif self['items'].getType() == 'object':
+					if not all(val is None for val in reponse.values()):
+						result.append(reponse)
+						if not Prompt.promptYN('Another {0}?'.format(self['title']),default='n'):
+							return result
+					else:
+						return result
 		
 		# Field
 		#######

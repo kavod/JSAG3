@@ -20,7 +20,8 @@ class jsonConfigValue(dict):
 			self.setValue(value)
 			
 	def cliCreate(self):
-		self.setValue(self.configParser.cliCreate())
+		newConf = self.configParser.cliCreate()
+		self.setValue(newConf)
 			
 	def save(self,filename=None):
 		if filename is not None:
@@ -73,7 +74,10 @@ class jsonConfigValue(dict):
 			elif self.configParser['properties'][item[0]].getType() == 'array':
 				subitems = []
 				for element in item[1]:
-					subitems.append(jsonConfigValue(configParser=self.configParser['properties'][item[0]]['items'],value=element))
+					if self.configParser['properties'][item[0]]['items'].getType() in SIMPLE_TYPES:
+						subitems = item[1]
+					else:
+						subitems.append(jsonConfigValue(configParser=self.configParser['properties'][item[0]]['items'],value=element))
 				initial[str(item[0])] = subitems
 			else:
 				initial[str(item[0])] = item[1]
