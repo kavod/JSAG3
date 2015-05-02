@@ -22,6 +22,10 @@ class jsonConfigValue(dict):
 	def cliCreate(self):
 		newConf = self.configParser.cliCreate()
 		self.setValue(newConf)
+		
+	def cliChange(self):
+		newConf = self.configParser.cliChange(self)
+		self.setValue(newConf)
 			
 	def save(self,filename=None):
 		if filename is not None:
