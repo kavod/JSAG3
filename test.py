@@ -255,6 +255,7 @@ myValue.load()
 #print myValue
 config1 = {'transmission': {'username': 'niouf', 'slotNumber': 7,  'port': 50762, 'server': 'front142.sdbx.co'}, 'transfer': '/volume/Series', 'tracker': [{'login': {'username': 'Niouf'}, 'id': 't411'}], 'smtp': {'enable': True, 'conf': {'username': 'niouf', 'sender': 'niouf@niouf.fr', 'ssltls': True, 'server': 'smtp.gmail.com', 'password': 'niorf', 'port': 587}}}
 myValue.update(config1)
-myValue.cliCreate()
+#myValue.cliCreate()
 #print cp.cliChange(config)
-print myValue
+#print type(myValue['transmission'])
+myValue.displayConf()
