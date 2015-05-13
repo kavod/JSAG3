@@ -154,7 +154,8 @@ class jsonConfigParser(dict):
 				if item.getType() in SIMPLE_TYPES:
 					line = item.display(json[key],width=width,ident='')
 				elif item.getType() == 'array':
-					value = '{0} managed'.format(str(len(json[key])))
+					item_count = str(len(json[key])) if key in json.keys() else "0"
+					value = '{0} managed'.format(item_count)
 					line = ("{0:" + str(width)+"} - {1}").format(item['title'],value)
 				elif item.getType() == 'hidden':
 					continue
