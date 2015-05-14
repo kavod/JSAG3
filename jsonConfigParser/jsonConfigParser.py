@@ -258,14 +258,22 @@ class jsonConfigParser(dict):
 			raise Exception(self.getType())
 			
 				
-	def getType(self):
-		if 'type' in self.keys():
+	def getType(self,path=[]):
+		configParser = self
+		if len(path) > 0:
+			for level in path:
+				if isinstance(level,int):
+					configParser = configParser['items']
+				else:
+					configParser = configParser['properties'][level]
+
+		if 'type' in configParser.keys():
 			return self['type']
-		elif '$def' in self.keys():
-			matchObj = re.match(r'^#/{0}/(\w+)$'.format(self.defPattern),self['$def'],re.M)
+		elif '$def' in configParser.keys():
+			matchObj = re.match(r'^#/{0}/(\w+)$'.format(self.defPattern),configParser['$def'],re.M)
 			if matchObj:
 				return matchObj.group(1)
-			matchObj = re.match(r'^#/choices/(\w+)$',self['$def'],re.M)
+			matchObj = re.match(r'^#/choices/(\w+)$',configParser['$def'],re.M)
 			if matchObj:
 				return 'choices'
 		return ''
