@@ -23,10 +23,10 @@ definitions =  {
 		"hidden": {
 			"type":"string"
 		},
-	}
+	},
 }
 
-SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file']
+SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file','email']
 
 def loadParserFromFile(filename):
 	if not isinstance(filename,str):
@@ -60,7 +60,7 @@ class jsonConfigParser(dict):
 		return newone
 	
 	def validate(self,json):
-		jsonschema.validate(json,self)
+		jsonschema.validate(json,self,format_checker=jsonschema.FormatChecker())
 		
 	def cliCreate(self,required=False):
 		# Object
@@ -136,7 +136,7 @@ class jsonConfigParser(dict):
 					self.validate(result)
 					return result
 				except:
-					warning='Incorrect answer'
+					warning='Incorrect answer, {0} expected'.format(self.getType())
 		elif self.getType() == 'hidden':
 			return self['default']
 		else:
@@ -269,6 +269,8 @@ class jsonConfigParser(dict):
 
 		if 'type' in configParser.keys():
 			return self['type']
+		elif 'format' in configParser.keys():
+			return self['format']
 		elif '$def' in configParser.keys():
 			matchObj = re.match(r'^#/{0}/(\w+)$'.format(self.defPattern),configParser['$def'],re.M)
 			if matchObj:

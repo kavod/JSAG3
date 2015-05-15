@@ -160,7 +160,7 @@ class jsonConfigValue(object):
 	def choose(self,path=[]):
 		value = self.getValue(path)
 		configParser = self.getConfigParser(path)
-		if configParser.getType() in SIMPLE_TYPES:
+		if (configParser.getType() in SIMPLE_TYPES) or (configParser.getType() == 'array' and configParser['items'].getType() in SIMPLE_TYPES) or value is None:
 			parent = self.getValue(path[:-1])
 			parent[path[-1]] = configParser.cliCreate()
 		else:
