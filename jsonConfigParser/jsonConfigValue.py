@@ -137,18 +137,26 @@ class jsonConfigValue(object):
 		configParser.validate(result)
 		self.value = result
 
-	def getValue(self,path=[],showPasswords=False):
+	def getValue(self,path=[],hidePasswords=True):
 		value = self.value
 		configParser = self.getConfigParser(path=path)
 		if len(path) > 0:
 			for level in path:
-				if not showPasswords and configParser.getType() == 'password':
-					value = '****'
-				elif configParser.getType() in SIMPLE_TYPES or (configParser.getType() == 'object' and level in value.keys()) or (configParser.getType() == 'array' and len(value) > level):
+				if (isinstance(value,dict) and level in value.keys()) or (isinstance(value,list) and len(value) > level):
 					value = value[level]
 				else:
-					value = None
-		return value
+					return None
+		if configParser.getType() == "object":
+			result={}
+			for key in value.keys():
+				result[key] = self.getValue(path=path+[key],hidePasswords=hidePasswords)
+			return result
+		elif configParser.getType() == 'array':
+			return [self.getValue(path=path+[item[0]],hidePasswords=hidePasswords) for item in enumerate(value)]
+		elif configParser.getType() == 'password' and hidePasswords:
+			return '****'
+		else: 
+			return value
 
 	def getConfigParser(self,path=[]):
 		configParser = self.configParser
