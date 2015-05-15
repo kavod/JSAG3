@@ -3,6 +3,7 @@
 
 from jsonConfigParser import *
 import Prompt
+from codecs import open
 
 class color:
    PURPLE = '\033[95m'
