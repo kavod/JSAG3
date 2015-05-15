@@ -80,7 +80,7 @@ class jsonConfigValue(object):
 		self.setValue(newConf)
 		
 	def cliChange(self):
-		newConf = self.configParser.cliChange(self)
+		newConf = self.configParser.cliChange(self.value)
 		self.setValue(newConf)
 			
 	def save(self,filename=None):
@@ -90,7 +90,7 @@ class jsonConfigValue(object):
 			raise Exception("No file specified")
 		try:
 			with open(self.filename, 'w') as outfile:
-				json.dump(self.value, outfile)
+				json.dump(self.value, outfile,encoding='utf8')
 		except:
 			raise Exception("Unable to write file {0}".format(str(self.filename)))
 
@@ -100,7 +100,7 @@ class jsonConfigValue(object):
 		if self.filename is None:
 			raise Exception("No file specified")
 		try:
-			with open(self.filename) as data_file:    
+			with open(self.filename,encoding='utf8') as data_file:    
 				data = json.load(data_file)
 		except:
 			raise Exception("Unable to read file {0}".format(str(self.filename)))
@@ -171,6 +171,7 @@ class jsonConfigValue(object):
 			target_path = []
 			for key,line in enumerate(lines[1]):
 				label = pattern.SIMPLE.format('',line['label'])
+				line['value'] =  line['value'].encode('utf8')
 				choices.append(('{0:' + str(max(width,0)+15) + '}{1}').format(label,line['value']))
 				target_path.append(line['path'])
 			reponse = Prompt.promptChoice(question,choices,warning='',selected=[],default = None,mandatory=True,multi=False)
