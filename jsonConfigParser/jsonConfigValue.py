@@ -2,8 +2,64 @@
 #encoding:utf-8
 
 from jsonConfigParser import *
+import Prompt
 
-class jsonConfigValue(dict):
+class color:
+   PURPLE = '\033[95m'
+   WHITE = '\033[97m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
+
+class pattern:
+	DICT = '{0}' + color.BOLD + color.RED + '{1}:' + color.END
+	LIST = '{0}' + color.BOLD + color.GREEN + '{1}:' + color.END
+	SIMPLE = '{0}' + color.BOLD + color.WHITE + '{1}:' + color.END
+
+
+def deepupdate(dict1,dict2,appendArray=False):
+	for key in dict2.keys():
+		if type(key) == 'unicode':
+			key = str(key)
+		if key in dict1.keys():
+			if isinstance(dict1[key],dict) and isinstance(dict2[key],dict):
+				deepupdate(dict1[key],dict2[key])
+			elif appendArray and isinstance(dict1[key],list) and isinstance(dict2[key],list):
+				dict1[key] += dict2[key]
+			else:
+				dict1[key] = copy.deepcopy(dict2[key])
+		else:
+			dict1[key] = copy.deepcopy(dict2[key])
+
+def getWidth(myList,maxLevel=-1,ident=0):
+	width = 0
+	for item in myList:
+		if isinstance(item,list):
+			width = max(width,getWidth(item,maxLevel=maxLevel-1,ident=ident+1))
+		else:
+			width = max(width,len(item['label'])+ident)
+	return width
+
+def printList(myList,ident="",width=0):
+	for item in myList:
+		if isinstance(item,list):
+			printList(item,ident=" " + ident,width=width)
+		else:
+			try:
+				label = item['pattern'].format(ident,item['label'],item['value'])
+				print ('{0:' + str(max(width,0)+15) + '}{1}').format(label,item['value'])
+			except:
+				print "ERROR"
+				print myList
+				sys.exit()
+
+class jsonConfigValue(object):
 	def __init__(self,configParser=None,value=None,filename=None):
 		if isinstance(configParser,jsonConfigParser):
 			self.configParser = configParser
@@ -15,7 +71,7 @@ class jsonConfigValue(dict):
 		self.setFilename(filename)
 
 		if value is None:
-			dict.__init__(self,{})
+			self.value = None
 		else:
 			self.setValue(value)
 			
@@ -34,7 +90,7 @@ class jsonConfigValue(dict):
 			raise Exception("No file specified")
 		try:
 			with open(self.filename, 'w') as outfile:
-				json.dump(self, outfile)
+				json.dump(self.value, outfile)
 		except:
 			raise Exception("Unable to write file {0}".format(str(self.filename)))
 
@@ -57,32 +113,124 @@ class jsonConfigValue(dict):
 		if not isinstance(filename,str):
 			raise TypeError("Filename must be a string. {0} entered".format(str(filename)))
 		self.filename = filename
+
+	def keys(self):
+		return self.value.keys()
+
+	def __getitem__(self,key):
+		if self.configParser.getType() in ['object','array']:
+			return self.value[key]
+		else:
+			TypeError("value is not object nor list")
 		
-	def setValue(self,value):
-		result = self.merge({},value)
-		self.configParser.validate(result)
-		dict.__init__(self,result)		
+	def setValue(self,value,path=[]):
+		configParser = self.getConfigParser(path)
+		if configParser.getType() == 'object':
+			result = dict(value)
+		elif configParser.getType() == 'array':
+			result = list(value)
+		elif configParser.getType() in SIMPLE_TYPES:
+			result = copy.copy(value)
+		configParser.validate(result)
+		self.value = result
+
+	def getValue(self,path=[]):
+		value = self.value
+		if len(path) > 0:
+			for level in path:
+				if (isinstance(value,dict) and level in value.keys()) or (isinstance(value,list) and len(value) > level):
+					value = value[level]
+				else:
+					value = None
+		return value
+
+	def getConfigParser(self,path=[]):
+		configParser = self.configParser
+		if len(path) > 0:
+			for level in path:
+				if isinstance(level,int):
+					configParser = configParser['items']
+				else:
+					configParser = configParser['properties'][level]
+		return configParser
+
+	def update(self,value,appendArray=False):
+		deepupdate(self.value,value,appendArray)
+
+	def choose(self,path=[]):
+		value = self.getValue(path)
+		configParser = self.getConfigParser(path)
+		if (configParser.getType() in SIMPLE_TYPES) or (configParser.getType() == 'array' and configParser['items'].getType() in SIMPLE_TYPES) or value is None:
+			parent = self.getValue(path[:-1])
+			parent[path[-1]] = configParser.cliCreate()
+		else:
+			lines = self.displayConf(path=path,maxLevel=1)
+			question = lines[0]['pattern'].format('',lines[0]['label'],lines[0]['value'])
+			choices = []
+			width = getWidth(lines,maxLevel=1)
+			target_path = []
+			for key,line in enumerate(lines[1]):
+				label = pattern.SIMPLE.format('',line['label'])
+				choices.append(('{0:' + str(max(width,0)+15) + '}{1}').format(label,line['value']))
+				target_path.append(line['path'])
+			reponse = Prompt.promptChoice(question,choices,warning='',selected=[],default = None,mandatory=True,multi=False)
+			self.choose(target_path[reponse])
+
+	def display(self,path=[],maxLevel=-1):
+		lines = self.displayConf(path=path,maxLevel=maxLevel)
+		width = getWidth(lines)
+		printList(lines,ident='',width=width)
 		
-	def update(self,value):
-		result = self.merge(copy.deepcopy(self),value)
-		self.configParser.validate(result)
-		for key in result.keys():
-			self[key] = result[key]
-			
-	def merge(self,initial,value):
-		for item in value.iteritems():
-			if self.configParser['properties'][item[0]].getType() == 'object':
-				if item[0] not in initial.keys():
-					initial[str(item[0])] = {}
-				initial[str(item[0])].update(jsonConfigValue(configParser=self.configParser['properties'][item[0]],value=item[1]))
-			elif self.configParser['properties'][item[0]].getType() == 'array':
-				subitems = []
-				for element in item[1]:
-					if self.configParser['properties'][item[0]]['items'].getType() in SIMPLE_TYPES:
-						subitems = item[1]
-					else:
-						subitems.append(jsonConfigValue(configParser=self.configParser['properties'][item[0]]['items'],value=element))
-				initial[str(item[0])] = subitems
+	def displayConf(self,path=[],maxLevel=-1,key=''):
+		lines = []
+		value = self.getValue(path)
+		configParser = self.getConfigParser(path)
+		if configParser.getType() == 'object':
+			if value is None:
+				val = "Not managed"
 			else:
-				initial[str(item[0])] = item[1]
-		return initial
+				if maxLevel != 0:
+					val = ''
+				else:
+					val = "Managed"
+			lines.append({'pattern':pattern.DICT,"label":configParser['title']+key,"value":val,"path":path})
+			if maxLevel !=0 and value is not None:
+				lines.append([])
+				for item in sorted(configParser['properties'].iteritems(),key=lambda k:k[1]['order'] if 'order' in k[1].keys() else 0):
+					lines[1] +=self.displayConf(path=path+[item[0]],maxLevel=maxLevel-1)
+		# array
+		elif configParser.getType() == 'array':
+			if value is None or len(value)<1:
+				val = "0 managed"
+			else:
+				if maxLevel != 0:
+					val = ''
+				else:
+					val = str(len(value)) + " managed"
+			label = "List of " + configParser['title']
+			lines.append({'pattern':pattern.LIST,"label":label,"value":val,"path":path})
+			if value is not None and maxLevel != 0:
+				lines.append(self.displayList(path=path,maxLevel=maxLevel-1))
+				
+
+		# Simple
+		else:
+			val = value if value is not None else "None"
+			if configParser.getType() == 'password':
+				val = '****'
+			lines.append({'pattern':pattern.SIMPLE,"label":configParser['title'],"value":val,"path":path})
+		return lines
+			
+	def displayList(self,path=[],maxLevel=-1):
+		lines = []
+		value = self.getValue(path)
+		configParser = self.getConfigParser(path)
+		for key,item in enumerate(value):
+			if configParser['items'].getType() == 'object':
+				lines+=self.displayConf(path=path+[key],maxLevel=maxLevel,key=' '+str(key+1))
+			elif configParser['items'].getType() == 'array':
+				lines.append({'pattern':pattern.LIST,"label":configParser['title']+' '+str(key+1),"value":'',"path":path})
+			else:
+				value = str(item)
+				lines.append({'pattern':pattern.SIMPLE,"label":configParser['title']+' '+str(key+1),"value":value,"path":path})
+		return lines

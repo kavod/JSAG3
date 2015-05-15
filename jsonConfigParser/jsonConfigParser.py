@@ -23,10 +23,10 @@ definitions =  {
 		"hidden": {
 			"type":"string"
 		},
-	}
+	},
 }
 
-SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file']
+SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file','email']
 
 def loadParserFromFile(filename):
 	if not isinstance(filename,str):
@@ -60,7 +60,7 @@ class jsonConfigParser(dict):
 		return newone
 	
 	def validate(self,json):
-		jsonschema.validate(json,self)
+		jsonschema.validate(json,self,format_checker=jsonschema.FormatChecker())
 		
 	def cliCreate(self,required=False):
 		# Object
@@ -136,7 +136,7 @@ class jsonConfigParser(dict):
 					self.validate(result)
 					return result
 				except:
-					warning='Incorrect answer'
+					warning='Incorrect answer, {0} expected'.format(self.getType())
 		elif self.getType() == 'hidden':
 			return self['default']
 		else:
@@ -154,7 +154,8 @@ class jsonConfigParser(dict):
 				if item.getType() in SIMPLE_TYPES:
 					line = item.display(json[key],width=width,ident='')
 				elif item.getType() == 'array':
-					value = '{0} managed'.format(str(len(json[key])))
+					item_count = str(len(json[key])) if key in json.keys() else "0"
+					value = '{0} managed'.format(item_count)
 					line = ("{0:" + str(width)+"} - {1}").format(item['title'],value)
 				elif item.getType() == 'hidden':
 					continue
@@ -257,14 +258,24 @@ class jsonConfigParser(dict):
 			raise Exception(self.getType())
 			
 				
-	def getType(self):
-		if 'type' in self.keys():
+	def getType(self,path=[]):
+		configParser = self
+		if len(path) > 0:
+			for level in path:
+				if isinstance(level,int):
+					configParser = configParser['items']
+				else:
+					configParser = configParser['properties'][level]
+
+		if 'type' in configParser.keys():
 			return self['type']
-		elif '$def' in self.keys():
-			matchObj = re.match(r'^#/{0}/(\w+)$'.format(self.defPattern),self['$def'],re.M)
+		elif 'format' in configParser.keys():
+			return self['format']
+		elif '$def' in configParser.keys():
+			matchObj = re.match(r'^#/{0}/(\w+)$'.format(self.defPattern),configParser['$def'],re.M)
 			if matchObj:
 				return matchObj.group(1)
-			matchObj = re.match(r'^#/choices/(\w+)$',self['$def'],re.M)
+			matchObj = re.match(r'^#/choices/(\w+)$',configParser['$def'],re.M)
 			if matchObj:
 				return 'choices'
 		return ''

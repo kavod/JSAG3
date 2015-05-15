@@ -254,7 +254,18 @@ myValue.load()
 #myValue.save()
 #print myValue
 config1 = {'transmission': {'username': 'niouf', 'slotNumber': 7,  'port': 50762, 'server': 'front142.sdbx.co'}, 'transfer': '/volume/Series', 'tracker': [{'login': {'username': 'Niouf'}, 'id': 't411'}], 'smtp': {'enable': True, 'conf': {'username': 'niouf', 'sender': 'niouf@niouf.fr', 'ssltls': True, 'server': 'smtp.gmail.com', 'password': 'niorf', 'port': 587}}}
-myValue.update(config1)
-myValue.cliCreate()
+myValue.update(config1,appendArray=True)
+config2={'keywords':[]}
+myValue.update(config2,appendArray=False)
+#print myValue.value
+#myValue.cliCreate()
 #print cp.cliChange(config)
-print myValue
+#print type(myValue['transmission'])
+#print "display tracker" + ('*'*40)
+#myValue.display(path=['tracker'])
+#print "choose tracker" + ('*'*40)
+#myValue.choose(path=['tracker'])
+print "choose" + ('*'*40)
+myValue.choose()
+print "display " + ('*'*40)
+myValue.display()

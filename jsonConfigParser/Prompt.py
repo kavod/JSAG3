@@ -167,7 +167,7 @@ def promptChoice(question,choix,warning='',selected=[],default = None,mandatory=
 	str_not_selected = 	'[        ]'
 	while True:	
 		str_choices = ''
-		width = len(max(choix, key=len))
+		width = len(max(choix, key=len)) if len(choix) > 0 else 0
 		
 		if default is None and not mandatory:
 			str_question = "{0} [keep blank for none]".format(str(question))
@@ -192,7 +192,7 @@ def promptChoice(question,choix,warning='',selected=[],default = None,mandatory=
 			else:
 				return None
 		elif not reponse.isdigit():
-			warning = "Incorrect answer"
+			warning = "Incorrect answer (numeric value expected)"
 		elif int(reponse) < 1 or int(reponse) > len(choix):
 			warning = "Incorrect answer"
 		else:
