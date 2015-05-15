@@ -54,7 +54,9 @@ def printList(myList,ident="",width=0):
 		else:
 			try:
 				label = item['pattern'].format(ident,item['label'],item['value'])
-				print ('{0:' + str(max(width,0)+15) + '}{1}').format(label,item['value'])
+				if isinstance(item['value'],unicode):
+					item['value'] =  item['value'].encode('utf8')
+				print ('{0:' + str(max(width,0)+15) + '}{1}').format(label,str(item['value']))
 			except:
 				print "ERROR"
 				print myList
