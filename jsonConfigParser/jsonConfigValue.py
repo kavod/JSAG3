@@ -137,11 +137,14 @@ class jsonConfigValue(object):
 		configParser.validate(result)
 		self.value = result
 
-	def getValue(self,path=[]):
+	def getValue(self,path=[],showPasswords=False):
 		value = self.value
+		configParser = self.getConfigParser(path=path)
 		if len(path) > 0:
 			for level in path:
-				if (isinstance(value,dict) and level in value.keys()) or (isinstance(value,list) and len(value) > level):
+				if not showPasswords and configParser.getType() == 'password':
+					value = '****'
+				elif configParser.getType() in SIMPLE_TYPES or (configParser.getType() == 'object' and level in value.keys()) or (configParser.getType() == 'array' and len(value) > level):
 					value = value[level]
 				else:
 					value = None
@@ -220,8 +223,6 @@ class jsonConfigValue(object):
 		# Simple
 		else:
 			val = value if value is not None else "None"
-			if configParser.getType() == 'password':
-				val = '****'
 			lines.append({'pattern':pattern.SIMPLE,"label":configParser['title'],"value":val,"path":path})
 		return lines
 			
