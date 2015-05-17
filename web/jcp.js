@@ -102,7 +102,8 @@ function form_generate(id,schema,required,config,str_format)
 	else if (getType(schema) == 'password')
 	{
 		node = $("<div>")
-				.html(str_format.replace('%s',schema['title']))
+				.append($("<label>").html(str_format.replace('%s',schema['title'])))
+				//.html(str_format.replace('%s',schema['title']))
 				.append($("<input>")
 					.attr("type","password")
 					.attr("placeholder",schema['description'])
@@ -115,7 +116,8 @@ function form_generate(id,schema,required,config,str_format)
 	else if (getType(schema) == 'integer')
 	{
 		node = $("<div>")
-				.html(str_format.replace('%s',schema['title']))
+				.append($("<label>").html(str_format.replace('%s',schema['title'])))
+				//.html(str_format.replace('%s',schema['title']))
 				.append($("<input>")
 					.attr("type","number")
 					.attr("placeholder",schema['description'])
@@ -128,7 +130,8 @@ function form_generate(id,schema,required,config,str_format)
 	else if (getType(schema) == 'email')
 	{
 		node = $("<div>")
-				.html(str_format.replace('%s',schema['title']))
+				.append($("<label>").html(str_format.replace('%s',schema['title'])))
+				//.html(str_format.replace('%s',schema['title']))
 				.append($("<input>")
 					.attr("type","email")
 					.attr("placeholder",schema['description'])
@@ -156,7 +159,8 @@ function form_generate(id,schema,required,config,str_format)
 		});
 		nodeSelect.val(myDefault);
 		node = $("<div>")
-				.html(str_format.replace('%s',schema['title']))
+				.append($("<label>").html(str_format.replace('%s',schema['title'])))
+				//.html(str_format.replace('%s',schema['title']))
 				.append(nodeSelect);
 		return node;
 	}
@@ -181,14 +185,16 @@ function form_generate(id,schema,required,config,str_format)
 		}
 		nodeSelect.val(myDefault);
 		node = $("<div>")
-				.html(str_format.replace('%s',schema['title']))
+				.append($("<label>").html(str_format.replace('%s',schema['title'])))
+				//.html(str_format.replace('%s',schema['title']))
 				.append(nodeSelect);
 		return node;
 	}
 	else if (SIMPLE_TYPES.indexOf(getType(schema))>-1)
 	{
 		node = $("<div>")
-				.html(str_format.replace('%s',schema['title']))
+				.append($("<label>").html(str_format.replace('%s',schema['title'])))
+				//.html(str_format.replace('%s',schema['title']))
 				.append($("<input>")
 					.attr("name",id)
 					.attr("id",id)
@@ -222,7 +228,7 @@ function create_events(id,schema,config)
 			value = (typeof(config) !== "undefined" && item['id'] in config) ? config[item['id']] : undefined;
 			item_id = full_id(id,item['id']);
 			create_events(item_id,item['item'],value);
-			map[item['id']] = item_id;]
+			map[item['id']] = item_id;
 		});
 
 		if ("conditions" in schema)
