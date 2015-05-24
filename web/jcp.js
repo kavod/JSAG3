@@ -177,6 +177,11 @@ function form_generate(id,schema,required,config,str_format,level)
 					.attr("name",id)
 					.attr("id",id)
 					.prop("required",required);
+					
+		nodeSelect.append($("<option>")
+					.attr("value","")
+					.html(schema['description'])
+					);
 
 		defRegex = /^#\/choices\/(\w+)/i;
 		myType = defRegex.exec(schema['$def']);
@@ -250,6 +255,11 @@ function create_events(id,schema,config)
 			{
 				myevent = Object.create(val);
 				myevent['if_val'] = val['if_val'].slice(0);
+				index = myevent['if_val'].indexOf(null)
+				if (index!=-1)
+				{
+					myevent['if_val'][index] = "";
+				}
 				myevent['map'] = map;
 				myevent['if_prop'] = full_id(id,myevent['if_prop']);
 				myevent['then_prop'] = full_id(id,myevent['then_prop']);
