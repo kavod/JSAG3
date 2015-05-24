@@ -95,11 +95,9 @@ function form_generate(id,schema,required,config,str_format,level)
 	else if (getType(schema) == 'array')
 	{
 		node = $("<fieldset>")
+				.attr('id',id)
 				.append($("<legend>").html(str_format.replace('%s',schema['title'])));
-		$.each(config,function(index,item) {
-			node.append(form_generate(id + '_' + (index+1),schema['items'],false,item,'%s '+(index+1),level+1));
-		});
-		return node.append(form_generate(id,schema['items'],false,undefined,'Add %s',level+1));
+		return node.append(form_generate(id + '_0',schema['items'],false,undefined,'Add %s',level+1).addClass('new'));
 	}
 	else if (getType(schema) == 'password')
 	{
@@ -113,7 +111,6 @@ function form_generate(id,schema,required,config,str_format,level)
 					.attr("placeholder",schema['description'])
 					.attr("name",id)
 					.attr("id",id)
-					.attr("value",myDefault)
 					.prop("required",required));
 		return node;
 	}
@@ -124,7 +121,6 @@ function form_generate(id,schema,required,config,str_format,level)
 					.attr("placeholder",schema['description'])
 					.attr("name",id)
 					.attr("id",id)
-					.attr("value",myDefault)
 					.prop("required",required);
 		if ('minimum' in schema)
 			inputNode.attr("min",('exclusiveMinimum' in schema && schema['exclusiveMinimum']) ? parseInt(schema['minimum']) + 1 : schema['minimum']);
@@ -151,13 +147,11 @@ function form_generate(id,schema,required,config,str_format,level)
 					.attr("placeholder",schema['description'])
 					.attr("name",id)
 					.attr("id",id)
-					.attr("value",myDefault)
 					.prop("required",required));
 		return node;
 	}
 	else if (getType(schema) == 'boolean')
 	{
-		myDefault = (myDefault) ? "1" : "0";
 		nodeSelect = $("<select>")
 					.attr("name",id)
 					.attr("id",id)
@@ -171,7 +165,6 @@ function form_generate(id,schema,required,config,str_format,level)
 						.html(value)
 						);
 		});
-		nodeSelect.val(myDefault);
 		node = $("<div>")
 				.append($("<label>").html(str_format.replace('%s',schema['title']))
 					.addClass('nv'+level)
@@ -203,7 +196,6 @@ function form_generate(id,schema,required,config,str_format,level)
 							);
 			});
 		}
-		nodeSelect.val(myDefault);
 		node = $("<div>")
 				.append($("<label>").html(str_format.replace('%s',schema['title']))
 					.addClass('nv'+level)
@@ -221,9 +213,80 @@ function form_generate(id,schema,required,config,str_format,level)
 					.attr("name",id)
 					.attr("id",id)
 					.attr("placeholder",schema['description'])
-					.attr("value",myDefault)
 					.prop("required",required));
 		return node
+	}
+}
+
+function form_setValue(id,schema,config,level)
+{
+	if (typeof(level) === "undefined")
+		level = 0;
+
+	myDefault = (typeof(config) === "undefined") ? (('default' in schema) ? schema['default'] : '') : config;
+
+	var node;
+	if (getType(schema)=='object')
+	{
+		sortedItems = [];
+		$.each(schema['properties'],function(index,item)
+		{
+			sortedItems.push({'id':index,'order':item['order'],'item':item});
+		});
+
+		sortedItems = sortedItems.sort(function (a, b) {
+			if (!('order' in a)) a['order'] = 0;
+			if (!('order' in b)) b['order'] = 0;
+			
+			return a['order']> b['order'] ;
+		});
+
+		$.each(sortedItems,function(index,item)
+		{
+			item_id = full_id(id,item['id']);
+			value = (typeof(config) !== "undefined" && item['id'] in config) ? config[item['id']] : undefined;
+
+			form_setValue(item_id,item['item'],value,level+1);
+		});
+	}
+	else if (getType(schema) == 'array')
+	{
+		$('#' + id +'>:not(.new):not(legend)').remove();
+		node = $('#' + id +'>.new');
+		$.each(config,function(index,item) {
+			node.before(form_generate(id + '_' + (index+1),schema['items'],false,item,'%s '+(index+1),level+1));
+		});
+		
+		$.each(config,function(index,item) {
+			form_setValue(id + '_' + (index+1),schema['items'],item,level+1);
+		});
+	}
+	else if (getType(schema) == 'password')
+	{
+		$('#' + id ).val(myDefault);
+	}
+	else if (getType(schema) == 'integer')
+	{
+		$('#' + id ).val(myDefault);
+	}
+	else if (getType(schema) == 'email')
+	{
+		$('#' + id ).val(myDefault);
+	}
+	else if (getType(schema) == 'boolean')
+	{
+		myDefault = (myDefault) ? "1" : "0";
+		nodeSelect = $('#' + id );
+		nodeSelect.val(myDefault);
+	}
+	else if (getType(schema) == 'choices')
+	{
+		nodeSelect = $('#' + id );
+		nodeSelect.val(myDefault);
+	}
+	else if (SIMPLE_TYPES.indexOf(getType(schema))>-1)
+	{
+		$('#' + id ).val(myDefault);
 	}
 }
 
@@ -284,23 +347,28 @@ function create_events(id,schema,config)
 			cur_left = create_events(id + '_' + (index+1),schema['items'],item);
 			max_left = (max_left < cur_left) ? cur_left : max_left;
 		});
-		cur_left = create_events(id,schema['items'],undefined);
+		cur_left = create_events(id + '_0',schema['items'],undefined);
 		max_left = (max_left < cur_left) ? cur_left : max_left;
 	}
 	else
 	{
+		console.log(id);
 		return $('#'+id).offset()['left'];
 	}
 }
 
-function create_form(schema,config)
+function create_form(node,id,schema,config)
 {
 	if (typeof(config) === 'undefined')
 		config = {};
-	node = $("<form>")
-			.append(form_generate("",schema,false,config))
-			.append($("<input>").attr("type","submit"));
-	return node
+	node.html('');
+	node.append($("<form>")
+			.append(form_generate(id,schema,false,config))
+			.append($("<input>").attr("type","button").attr("id","reset"))
+			.append($("<input>").attr("type","submit")));
+	form_setValue(id,schema,config);
+	create_events(id,schema,config);
+	align_values(schema,config);
 }
 
 show_hide = function(event)
@@ -314,14 +382,22 @@ show_hide = function(event)
 	}
 }
 
-$("#myForm").append(create_form(schema,config));
-var cur_left = create_events("",schema,config);
-console.log(cur_left);
-var maxInput = maxLeft("input,select");
-var maxLabelNv1 = maxLeft("label.nv1");
-var maxLabelNv2 = maxLeft("label.nv2");
-var maxLabelNv3 = maxLeft("label.nv3");
-var maxLabelNv4 = maxLeft("label.nv4");
+function align_values(schema,config)
+{
+	var maxLabelNv = Array(9);
+	for(var i = 1 ; i < 10 ; i++)
+		$("label.nv" + i.toString()).css('width','auto');
+	var maxInput = maxLeft("input,select");
+	for(var i = 1 ; i < 10 ; i++)
+		maxLabelNv[i] = maxLeft("label.nv" + i.toString());
+	$("label").css('display','inline-block');
+	for(var i = 1 ; i < 10 ; i++)
+		$("label.nv" + i.toString()).css('width',maxInput-maxLabelNv[i]+10);
+}
+
+create_form($('#myForm'),"conf",schema,config);
+
+
 function maxLeft(selector)
 {
 	return Math.max.apply(null, $(selector).map(function ()
@@ -329,16 +405,6 @@ function maxLeft(selector)
 		return $(this).offset()['left'];
 	}).get());
 }
-console.log(maxInput);
-console.log(maxLabelNv1);
-console.log(maxLabelNv2);
-console.log(maxLabelNv3);
-console.log(maxLabelNv4);
-$("label").css('display','inline-block');
-$("label.nv1").css('width',maxInput-maxLabelNv1+10);
-$("label.nv2").css('width',maxInput-maxLabelNv2+10);
-$("label.nv3").css('width',maxInput-maxLabelNv3+10);
-$("label.nv4").css('width',maxInput-maxLabelNv4+10);
 
 function full_id(path,id)
 {
