@@ -49,12 +49,14 @@ schema = {"properties": {"keywords": {"items": {"order": 1, "type": "string", "d
 
 config = {"transmission": {"username": "niouf", "slotNumber": 6, "password": "niorf", "port": 50762, "server": "front142.sdbx.co"}, "transfer": "/volume/Series", "tracker": [{"id": "kickass"}, {"login": {"username": "Niouf", "password": "moihlijh"}, "id": "t411"}], "smtp": {"enable": true, "conf": {"username": "niouf", "ssltls": true, "sender": "niouf@niouf.fr", "password": "niorf", "port": 587, "server": "smtp.gmail.com"}},"keywords":["niouf","niorf"]};
 
-function form_generate(id,schema,required,config,str_format)
+function form_generate(id,schema,required,config,str_format,level)
 {
 	if (typeof(required) === "undefined")
 		required = false
 	if (typeof(str_format) === "undefined")
 		str_format = '%s: '
+	if (typeof(level) === "undefined")
+		level = 0;
 
 	myDefault = (typeof(config) === "undefined") ? (('default' in schema) ? schema['default'] : '') : config;
 
@@ -84,7 +86,7 @@ function form_generate(id,schema,required,config,str_format)
 			required = ('required' in schema && schema['required'].indexOf(item['id'])> -1);
 			value = (typeof(config) !== "undefined" && item['id'] in config) ? config[item['id']] : undefined;
 
-			nodeItem = form_generate(item_id,item['item'],required,value);
+			nodeItem = form_generate(item_id,item['item'],required,value,'%s',level+1);
 			node.append(nodeItem);
 			map[item['id']] = item_id;
 		});
@@ -95,15 +97,17 @@ function form_generate(id,schema,required,config,str_format)
 		node = $("<fieldset>")
 				.append($("<legend>").html(str_format.replace('%s',schema['title'])));
 		$.each(config,function(index,item) {
-			node.append(form_generate(id + '_' + (index+1),schema['items'],false,item,'%s '+(index+1)));
+			node.append(form_generate(id + '_' + (index+1),schema['items'],false,item,'%s '+(index+1),level+1));
 		});
-		return node.append(form_generate(id,schema['items'],false,undefined,'Add %s'));
+		return node.append(form_generate(id,schema['items'],false,undefined,'Add %s',level+1));
 	}
 	else if (getType(schema) == 'password')
 	{
 		node = $("<div>")
-				.append($("<label>").html(str_format.replace('%s',schema['title'])))
-				//.html(str_format.replace('%s',schema['title']))
+				.append($("<label>")
+					.html(str_format.replace('%s',schema['title']))
+					.addClass('nv'+level)
+					)
 				.append($("<input>")
 					.attr("type","password")
 					.attr("placeholder",schema['description'])
@@ -116,8 +120,9 @@ function form_generate(id,schema,required,config,str_format)
 	else if (getType(schema) == 'integer')
 	{
 		node = $("<div>")
-				.append($("<label>").html(str_format.replace('%s',schema['title'])))
-				//.html(str_format.replace('%s',schema['title']))
+				.append($("<label>").html(str_format.replace('%s',schema['title']))
+					.addClass('nv'+level)
+					)
 				.append($("<input>")
 					.attr("type","number")
 					.attr("placeholder",schema['description'])
@@ -130,8 +135,9 @@ function form_generate(id,schema,required,config,str_format)
 	else if (getType(schema) == 'email')
 	{
 		node = $("<div>")
-				.append($("<label>").html(str_format.replace('%s',schema['title'])))
-				//.html(str_format.replace('%s',schema['title']))
+				.append($("<label>").html(str_format.replace('%s',schema['title']))
+					.addClass('nv'+level)
+					)
 				.append($("<input>")
 					.attr("type","email")
 					.attr("placeholder",schema['description'])
@@ -159,8 +165,9 @@ function form_generate(id,schema,required,config,str_format)
 		});
 		nodeSelect.val(myDefault);
 		node = $("<div>")
-				.append($("<label>").html(str_format.replace('%s',schema['title'])))
-				//.html(str_format.replace('%s',schema['title']))
+				.append($("<label>").html(str_format.replace('%s',schema['title']))
+					.addClass('nv'+level)
+					)
 				.append(nodeSelect);
 		return node;
 	}
@@ -185,16 +192,18 @@ function form_generate(id,schema,required,config,str_format)
 		}
 		nodeSelect.val(myDefault);
 		node = $("<div>")
-				.append($("<label>").html(str_format.replace('%s',schema['title'])))
-				//.html(str_format.replace('%s',schema['title']))
+				.append($("<label>").html(str_format.replace('%s',schema['title']))
+					.addClass('nv'+level)
+					)
 				.append(nodeSelect);
 		return node;
 	}
 	else if (SIMPLE_TYPES.indexOf(getType(schema))>-1)
 	{
 		node = $("<div>")
-				.append($("<label>").html(str_format.replace('%s',schema['title'])))
-				//.html(str_format.replace('%s',schema['title']))
+				.append($("<label>").html(str_format.replace('%s',schema['title']))
+					.addClass('nv'+level)
+					)
 				.append($("<input>")
 					.attr("name",id)
 					.attr("id",id)
@@ -207,8 +216,11 @@ function form_generate(id,schema,required,config,str_format)
 
 function create_events(id,schema,config)
 {
+	var max_left;
+	var cut_left;
 	if (getType(schema)=='object')
 	{
+		max_left = 0;
 		sortedItems = [];
 		$.each(schema['properties'],function(index,item)
 		{
@@ -227,7 +239,8 @@ function create_events(id,schema,config)
 		{
 			value = (typeof(config) !== "undefined" && item['id'] in config) ? config[item['id']] : undefined;
 			item_id = full_id(id,item['id']);
-			create_events(item_id,item['item'],value);
+			cur_left = create_events(item_id,item['item'],value);
+			max_left = (max_left < cur_left) ? cur_left : max_left;
 			map[item['id']] = item_id;
 		});
 
@@ -244,13 +257,21 @@ function create_events(id,schema,config)
 				show_hide({"data":myevent});
 			});
 		}
+		return max_left;
 	}
 	else if (getType(schema) == 'array')
 	{
+		max_left = 0;
 		$.each(config,function(index,item) {
-			create_events(id + '_' + (index+1),schema['items'],item);
+			cur_left = create_events(id + '_' + (index+1),schema['items'],item);
+			max_left = (max_left < cur_left) ? cur_left : max_left;
 		});
-		create_events(id,schema['items'],undefined);
+		cur_left = create_events(id,schema['items'],undefined);
+		max_left = (max_left < cur_left) ? cur_left : max_left;
+	}
+	else
+	{
+		return $('#'+id).offset()['left'];
 	}
 }
 
@@ -266,10 +287,8 @@ function create_form(schema,config)
 
 show_hide = function(event)
 {
-	console.log($('#'+event.data['if_prop'])[0].value);
 	if(event.data['if_val'].indexOf($('#'+event.data['if_prop'])[0].value)>-1)
 	{
-		console.log($('#'+event.data['then_prop']));
 		$('#'+event.data['then_prop']).hide();
 	} else
 	{
@@ -278,9 +297,30 @@ show_hide = function(event)
 }
 
 $("#myForm").append(create_form(schema,config));
-create_events("",schema,config);
-
-
+var cur_left = create_events("",schema,config);
+console.log(cur_left);
+var maxInput = maxLeft("input,select");
+var maxLabelNv1 = maxLeft("label.nv1");
+var maxLabelNv2 = maxLeft("label.nv2");
+var maxLabelNv3 = maxLeft("label.nv3");
+var maxLabelNv4 = maxLeft("label.nv4");
+function maxLeft(selector)
+{
+	return Math.max.apply(null, $(selector).map(function ()
+	{
+		return $(this).offset()['left'];
+	}).get());
+}
+console.log(maxInput);
+console.log(maxLabelNv1);
+console.log(maxLabelNv2);
+console.log(maxLabelNv3);
+console.log(maxLabelNv4);
+$("label").css('display','inline-block');
+$("label.nv1").css('width',maxInput-maxLabelNv1+10);
+$("label.nv2").css('width',maxInput-maxLabelNv2+10);
+$("label.nv3").css('width',maxInput-maxLabelNv3+10);
+$("label.nv4").css('width',maxInput-maxLabelNv4+10);
 
 function full_id(path,id)
 {
