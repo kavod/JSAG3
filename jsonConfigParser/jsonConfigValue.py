@@ -134,7 +134,10 @@ class jsonConfigValue(object):
 			result = list(value)
 		elif configParser.getType() in SIMPLE_TYPES:
 			result = copy.copy(value)
-		configParser.validate(result)
+		try:
+			configParser.validate(result)
+		except:
+			print "Type {0} unknown".format(configParser.getType())
 		self.value = result
 
 	def getValue(self,path=[],hidePasswords=True):

@@ -1,6 +1,27 @@
+
+// ScriptPath from http://www.bencarpenter.co.uk/javascript-path-to-the-current-script
+var scriptPath = function () {
+    var scripts = document.getElementsByTagName('SCRIPT');
+    var path = '';
+    if(scripts && scripts.length>0) {
+        for(var i in scripts) {
+            if(scripts[i].src && scripts[i].src.match(/\/jcp\.js$/)) {
+                path = scripts[i].src.replace(/(.*)\/jcp\.js$/, '$1');
+                break;
+            }
+        }
+    }
+    return path;
+};
+
+// jquery serialize object from https://github.com/macek/jquery-serialize-object
+$.getScript(scriptPath() + "/jquery.serialize-object.min.js");
+
 ;jcp = {
 
 	SIMPLE_TYPES: ['string','password','choices','integer','hostname','boolean','file','email'],
+	SCHEMA: {},
+	VALUES: {},
 
 	getType: function (input_schema,path)
 	{
@@ -90,7 +111,35 @@
 			node = $("<fieldset>")
 					.attr('id',id)
 					.append($("<legend>").html(str_format.replace('%s',schema['title'])));
-			return node.append(jcp.form_generate(id + '_0',schema['items'],false,undefined,'Add %s',level+1).addClass('new'));
+			newNode = $('<form>')
+						.append(jcp.form_generate(id + '_',schema['items'],true,undefined,'Add %s',level+1)
+							.append($('<input>')
+								.attr('type','button')
+								.attr('value','Add')
+								.on('click',function(event) {
+										$(".hidden_required_field").prop('required',false);
+										//$(this).closest('form').submit();
+										$('#' + id + '_submit').click();
+										$(".hidden_required_field").prop('required',true);
+									})
+								)
+							.append($('<input>')
+								.attr('type','submit')
+								.css('display','none')
+								.attr('id',id + '_submit')
+								)
+							)
+						.attr('id','new_' + id)
+						.on('submit',function(event) {
+							defRegex = /^(.*)_([0-9]+)$/i;
+							myID = defRegex.exec($('#'+event.target.id).prev()[0].id);
+							jcp.getFromJSON(jcp.VALUES,id).push(jcp.getFromJSON($('#'+event.target.id).serializeObject(),id)[0]);
+							jcp.updateForms();
+							$('#'+event.target.id)[0].reset();
+							event.preventDefault();
+						})
+						.addClass('new');
+			return node.append(newNode);
 		}
 		else if (jcp.getType(schema) == 'password')
 		{
@@ -102,7 +151,7 @@
 					.append($("<input>")
 						.attr("type","password")
 						.attr("placeholder",schema['description'])
-						.attr("name",id)
+						.attr("name",jcp.idToName(id))
 						.attr("id",id)
 						.prop("required",required));
 			return node;
@@ -112,7 +161,7 @@
 			inputNode = $("<input>")
 						.attr("type","number")
 						.attr("placeholder",schema['description'])
-						.attr("name",id)
+						.attr("name",jcp.idToName(id))
 						.attr("id",id)
 						.prop("required",required);
 			if ('minimum' in schema)
@@ -138,7 +187,7 @@
 					.append($("<input>")
 						.attr("type","email")
 						.attr("placeholder",schema['description'])
-						.attr("name",id)
+						.attr("name",jcp.idToName(id))
 						.attr("id",id)
 						.prop("required",required));
 			return node;
@@ -146,7 +195,7 @@
 		else if (jcp.getType(schema) == 'boolean')
 		{
 			nodeSelect = $("<select>")
-						.attr("name",id)
+						.attr("name",jcp.idToName(id))
 						.attr("id",id)
 						.prop("required",required);
 
@@ -168,7 +217,7 @@
 		else if (jcp.getType(schema) == 'choices')
 		{
 			nodeSelect = $("<select>")
-						.attr("name",id)
+						.attr("name",jcp.idToName(id))
 						.attr("id",id)
 						.prop("required",required);
 					
@@ -203,7 +252,7 @@
 						.addClass('nv'+level)
 						)
 					.append($("<input>")
-						.attr("name",id)
+						.attr("name",jcp.idToName(id))
 						.attr("id",id)
 						.attr("placeholder",schema['description'])
 						.prop("required",required));
@@ -247,11 +296,11 @@
 			$('#' + id +'>:not(.new):not(legend)').remove();
 			node = $('#' + id +'>.new');
 			$.each(config,function(index,item) {
-				node.before(jcp.form_generate(id + '_' + (index+1),schema['items'],false,item,'%s '+(index+1),level+1));
+				node.before(jcp.form_generate(id + '_' + (index),schema['items'],true,item,'%s '+(index+1),level+1));
 			});
 		
 			$.each(config,function(index,item) {
-				jcp.form_setValue(id + '_' + (index+1),schema['items'],item,level+1);
+				jcp.form_setValue(id + '_' + (index),schema['items'],item,level+1);
 			});
 		}
 		else if (jcp.getType(schema) == 'password')
@@ -337,10 +386,10 @@
 		{
 			max_left = 0;
 			$.each(config,function(index,item) {
-				cur_left = jcp.create_events(id + '_' + (index+1),schema['items'],item);
+				cur_left = jcp.create_events(id + '_' + (index),schema['items'],item);
 				max_left = (max_left < cur_left) ? cur_left : max_left;
 			});
-			cur_left = jcp.create_events(id + '_0',schema['items'],undefined);
+			cur_left = jcp.create_events(id + '_',schema['items'],undefined);
 			max_left = (max_left < cur_left) ? cur_left : max_left;
 		}
 		else
@@ -357,10 +406,63 @@
 		node.append($("<form>")
 				.append(jcp.form_generate(id,schema,false,config))
 				.append($("<input>").attr("type","button").attr("id","reset"))
-				.append($("<input>").attr("type","submit")));
-		jcp.form_setValue(id,schema,config);
-		jcp.create_events(id,schema,config);
-		jcp.align_values(schema,config);
+				.append($("<input>")
+					.attr("type","button")
+					.attr("value","Submit")
+					.on("click",function() { 
+						$(".hidden_required_field").prop('required',false);
+						//$(this).closest('form').submit();
+						$('#' + id + '_submit').click();
+						$(".hidden_required_field").prop('required',true); 
+						})
+					)
+				.append($('<input>')
+					.attr('type','submit')
+					.css('display','none')
+					.attr('id',id + '_submit')
+					)
+				.on('submit',function(event) {
+					data = $(this).serializeObject();
+					console.log(data);
+					$.ajax({
+						'url': '/jcp/submit',
+						'type':'POST',
+						'dataType':'json',
+						'data':JSON.stringify(data),
+						'contentType': 'application/json; charset=UTF-8', // This is the money shot
+     					'processData': false,
+     					cache:false,
+						});
+					
+					event.preventDefault();
+					})
+				);
+		jcp.SCHEMA[id] = schema;
+		jcp.VALUES[id] = config;
+		
+		jcp.updateForms();
+	},
+	
+	updateForms: function()
+	{
+		for (key in jcp.VALUES)
+		{
+			jcp.form_setValue(key,jcp.SCHEMA[key],jcp.VALUES[key]);
+			jcp.create_events(key,jcp.SCHEMA[key],jcp.VALUES[key]);
+			jcp.align_values(jcp.SCHEMA[key],jcp.VALUES[key]);
+		}
+	},
+	
+	schema_to_form: function(node,jcp_path,id)
+	{
+		schema_path = jcp_path + 'schema/' + id
+		values_path = jcp_path + 'values/' + id
+		$.getJSON( schema_path, function( data ) {
+			var schema = data;
+			$.getJSON( values_path, function( data ) {
+				jcp.create_form(node,id,schema,data);
+			});
+		});
 	},
 
 	show_hide: function(event)
@@ -368,9 +470,11 @@
 		if(event.data['if_val'].indexOf($('#'+event.data['if_prop'])[0].value)>-1)
 		{
 			$('#'+event.data['then_prop']).hide();
+			$('#'+event.data['then_prop'] + " *[required]").addClass("hidden_required_field");
 		} else
 		{
 			$('#'+event.data['then_prop']).show();
+			$('#'+event.data['then_prop'] + " *[required]").removeClass("hidden_required_field");
 		}
 	},
 
@@ -398,5 +502,25 @@
 	full_id: function (path,id)
 	{
 		return path + ((path.length>0) ? "_" + id : id)
+	},
+	
+	idToName: function(myString) 
+	{
+		while(myString!=myString.replace(new RegExp("^([^_]+)_([^_]*)(.*)$"),"$1[$2]$3")) 
+			myString=myString.replace(new RegExp("^([^_]+)_([^_]*)(.*)$"),"$1[$2]$3");
+		return myString 
+	},
+	
+	getFromJSON: function(json,myString) 
+	{
+		result = json;
+		var reg = myString.match(new RegExp("^([^_]+)_(.*)$"));
+		while(reg) 
+		{
+			myString=myString.replace(new RegExp("^([^_]+)_(.*)$"),"$2");
+			result = json[reg[1]];
+			reg = myString.match(new RegExp("^([^_]+)_(.*)$"));
+		}
+		return result[myString];
 	}
 };
