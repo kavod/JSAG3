@@ -296,7 +296,17 @@ $.getScript(scriptPath() + "/jquery.serialize-object.min.js");
 			$('#' + id +'>:not(.new):not(legend)').remove();
 			node = $('#' + id +'>.new');
 			$.each(config,function(index,item) {
-				node.before(jcp.form_generate(id + '_' + (index),schema['items'],true,item,'%s '+(index+1),level+1));
+				node.before(
+					jcp.form_generate(id + '_' + index,schema['items'],true,item,'%s '+(index+1),level+1)
+						.append($('<input>')
+							.attr('type','button')
+							.attr('value','Delete')
+							.on('click',function(event) {
+									jcp.getFromJSON(jcp.VALUES,id).splice(index,1);
+									jcp.updateForms();
+								})
+						)
+				);
 			});
 		
 			$.each(config,function(index,item) {
@@ -513,13 +523,15 @@ $.getScript(scriptPath() + "/jquery.serialize-object.min.js");
 	
 	getFromJSON: function(json,myString) 
 	{
+		regex_str = "^([^_]+)_(.*)$";
+	
 		result = json;
-		var reg = myString.match(new RegExp("^([^_]+)_(.*)$"));
+		var reg = myString.match(new RegExp(regex_str));
 		while(reg) 
 		{
-			myString=myString.replace(new RegExp("^([^_]+)_(.*)$"),"$2");
-			result = json[reg[1]];
-			reg = myString.match(new RegExp("^([^_]+)_(.*)$"));
+			myString=myString.replace(new RegExp(regex_str),"$2");
+			result = result[reg[1]];
+			reg = myString.match(new RegExp(regex_str));
 		}
 		return result[myString];
 	}
