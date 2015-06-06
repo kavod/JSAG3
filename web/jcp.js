@@ -117,10 +117,7 @@ $.getScript(scriptPath() + "/jquery.serialize-object.min.js");
 								.attr('type','button')
 								.attr('value','Add')
 								.on('click',function(event) {
-										$(".hidden_required_field").prop('required',false);
-										//$(this).closest('form').submit();
 										$('#' + id + '_submit').click();
-										$(".hidden_required_field").prop('required',true);
 									})
 								)
 							.append($('<input>')
@@ -420,10 +417,7 @@ $.getScript(scriptPath() + "/jquery.serialize-object.min.js");
 					.attr("type","button")
 					.attr("value","Submit")
 					.on("click",function() { 
-						$(".hidden_required_field").prop('required',false);
-						//$(this).closest('form').submit();
 						$('#' + id + '_submit').click();
-						$(".hidden_required_field").prop('required',true); 
 						})
 					)
 				.append($('<input>')
@@ -481,10 +475,12 @@ $.getScript(scriptPath() + "/jquery.serialize-object.min.js");
 		{
 			$('#'+event.data['then_prop']).hide();
 			$('#'+event.data['then_prop'] + " *[required]").addClass("hidden_required_field");
+			$('#'+event.data['then_prop'] + " .hidden_required_field").prop('required',false);
 		} else
 		{
+			$('#'+event.data['then_prop'] + " .hidden_required_field").prop('required',true);
+			$('#'+event.data['then_prop'] + " .hidden_required_field").removeClass("hidden_required_field");
 			$('#'+event.data['then_prop']).show();
-			$('#'+event.data['then_prop'] + " *[required]").removeClass("hidden_required_field");
 		}
 	},
 
