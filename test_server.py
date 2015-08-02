@@ -5,77 +5,64 @@ import os
 import sys
 import cherrypy
 import json
-from jsonConfigParser import *
-		
-class Schema(object):
-	@cherrypy.expose
+import jsonConfigParser
+
+class Root(object):
+	exposed = True
+	
+	@cherrypy.tools.accept(media='text/plain')
+	def GET(self):
+		with open ("jcp.html", "r") as myfile:
+			return myfile.read()
+
 	@cherrypy.tools.accept(media='application/json')
-	def submit(self,*args,**kwargs):
+	def POST(self,*args,**kwargs):
 		cl = cherrypy.request.headers['Content-Length']
 		rawbody = cherrypy.request.body.read(int(cl))
 		value = json.loads(rawbody)
 		schema_key = value.keys()[0]
-		schema = schemas[schema_key]['schema']
-		values = value[schema_key]
+		schema = jsonConfigParser.loadParserFromFile('config.jschem')
+		values = value['conf']
 		try:
-			cp = jsonConfigParser(schema)
+			cp = jsonConfigParser.jsonConfigParser(schema)
 		except:
 			return str(schema)
-		value = jsonConfigValue(cp,values,schemas[schema_key]['values_file'])
+		value = jsonConfigParser.jsonConfigValue(cp,values,'config.json')
 		value.save()
-		schemas[schema_key]['values'] = value.getValue()
 		cherrypy.response.headers['Content-Type'] = "application/json"
-		return value.getValue()
-
-	@cherrypy.expose
-	def default(self,*args,**kwargs):
-		return json.dumps(schemas[args[1]][args[0]])
+		return json.dumps(value.getValue())
 
 local_dir = os.path.abspath(os.getcwd())
-schemas = {}
-jcp_path = 'jcp/'
-jcp_conf = {
-				'/' + jcp_path + 'jcp.js': {
-                	'tools.staticfile.root': local_dir,
-					'tools.staticfile.on': True,
-					'tools.staticfile.filename': './web/jcp.js'
-				},
-				'/' + jcp_path + 'jquery.serialize-object.min.js': {
-                	'tools.staticfile.root': local_dir,
-					'tools.staticfile.on': True,
-					'tools.staticfile.filename': './web/jquery.serialize-object.min.js'
-				}
-			}
-
-def addSchema(id,jcp_path,schema_file,values_file):
-	schema = loadParserFromFile(schema_file)
-	value = jsonConfigValue(schema,value=None,filename=values_file)
-	value.load()
-	schemas[id] = {
-					'schema':schema,
-					'values':value.getValue(),
-					'values_file':values_file,
-					}
-
-class Root(object):
-	pass
 
 if __name__ == '__main__':
 	root = Root()
-	root.jcp = Root()
-	root.jcp = Schema()
 	
 	conf = {
+				# root:
+				#	GET method will retrieve html page
+				#	POST method will submit the form modification (and update data file)
 				'/' : {
-					'tools.caching.on': False
+					'tools.caching.on': False,
+					'request.dispatch': cherrypy.dispatch.MethodDispatcher(), 
 				},
-				'/index.html': {
+				# Link to the data file
+				'/data': {
                 	'tools.staticfile.root': local_dir,
 					'tools.staticfile.on': True,
-					'tools.staticfile.filename': './jcp.html'
+					'tools.staticfile.filename': './config.json'
+				},
+				# Link to the json schema file
+				'/config.jschem': {
+                	'tools.staticfile.root': local_dir,
+					'tools.staticfile.on': True,
+					'tools.staticfile.filename': './config.jschem'
+				},
+				# JS directory (containing JS script & "Jquery Serialize Object" library (required by JS script)
+				'/js': {
+                	'tools.staticdir.root': local_dir,
+					'tools.staticdir.on': True,
+					'tools.staticdir.dir': './js'
 				}
 		}
-	conf.update(jcp_conf)
-	addSchema('conf',jcp_path,'config.jschem','config.json')
 	cherrypy.quickstart(root, '/', conf)
 

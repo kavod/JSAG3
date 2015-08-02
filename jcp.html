@@ -1,20 +1,51 @@
 <!doctype html>
-<html lang="us">
+<html lang="en">
 <head>
 	<meta charset="utf-8">
+	<link rel="icon" href="data:;base64,iVBORw0KGgo=">
 	<title>jsonConfigParser</title>
-	<!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">-->
-	<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/ui-lightness/jquery-ui.css">
-	<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
-	<script src="jcp/jcp.js"></script>
+	<!-- You MUST load JQuery script (from https://jquery.com/ ) -->
+	<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+	<!-- You MUST load "JQuery serialize object" script (from Macek https://github.com/macek/jquery-serialize-object ) -->
+	<script src="js/jquery.serialize-object.min.js"></script>
+	<!-- Here the JCP script -->
+	<script src="js/jcp.js"></script>
 	<script>
 		$( document ).ready(function() {
-			//jcp.schema_to_form($('#myForm'),"config.jschem","config.json");
-			jcp.schema_to_form($('#myForm'),"jcp/","conf");
+			// Get the schema data
+			$.getJSON( 'config.jschem', function( data ) {
+				var schema = data;
+				// Get the data contents
+				$.getJSON( 'data', function( data ) {
+					// create form in <body> the node element
+					myForm = jcp.create_form($('body'),'conf',schema,data);
+					myForm.on('submit',function(event) {
+						event.preventDefault();
+						data = $(this).serializeObject();
+						console.log('The following data has been submit to /jcp/submit');
+						console.log(data);
+						$.ajax({
+							'url': '/',
+							'type':'POST',
+							'dataType':'json',
+							'data':JSON.stringify(data),
+							'contentType': 'application/json; charset=UTF-8',
+		 					'processData': false,
+		 					cache:false,
+							})
+							.done(function(data) {
+		 						console.log("Server response:");
+		 						console.log(data);
+		 					});
+				
+						}
+					);
+					
+				});
+			});
 		});
 	</script>
 </head>
 <body>
-	<div id="myForm"></div>
 </body>
 </html>
