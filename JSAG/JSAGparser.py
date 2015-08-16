@@ -118,11 +118,12 @@ class JSAGparser(dict):
 				
 			warning = ''
 			while True:
+				description = self['placeholder'] if 'placeholder' in self.keys() else self['description'] if 'description' in self.keys() else self['title']
 				if self.getType() == 'boolean':
 					result = Prompt.promptYN(self['title'],default=default)
 				else:
 					result = Prompt.promptSingle(
-								self['description'],
+								description,
 								choix=choices.values(),
 								password=(self.getType() == 'password'),
 								mandatory=required,
