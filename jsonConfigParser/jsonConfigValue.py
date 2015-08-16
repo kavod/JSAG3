@@ -25,18 +25,27 @@ class pattern:
 
 
 def deepupdate(dict1,dict2,appendArray=False):
-	for key in dict2.keys():
-		if type(key) == 'unicode':
-			key = str(key)
-		if key in dict1.keys():
-			if isinstance(dict1[key],dict) and isinstance(dict2[key],dict):
-				deepupdate(dict1[key],dict2[key])
-			elif appendArray and isinstance(dict1[key],list) and isinstance(dict2[key],list):
-				dict1[key] += dict2[key]
+	if isinstance(dict1,list) and isinstance(dict2,list):
+		if appendArray:
+			dict1 += dict2
+		else:
+			dict1 = copy.deepcopy(dict2)
+	elif isinstance(dict1,dict) and isinstance(dict2,dict):
+		for key in dict2.keys():
+			if isinstance(key,unicode) or isinstance(key,str):
+				key = str(key)
+			if key in dict1.keys():
+				if isinstance(dict1[key],dict) and isinstance(dict2[key],dict):
+					deepupdate(dict1[key],dict2[key])
+				elif appendArray and isinstance(dict1[key],list) and isinstance(dict2[key],list):
+					dict1[key] += dict2[key]
+				else:
+					dict1[key] = copy.deepcopy(dict2[key])
 			else:
 				dict1[key] = copy.deepcopy(dict2[key])
-		else:
-			dict1[key] = copy.deepcopy(dict2[key])
+	else:
+		dict1 = dict2
+	return dict1
 
 def getWidth(myList,maxLevel=-1,ident=0):
 	width = 0
@@ -55,15 +64,33 @@ def printList(myList,ident="",width=0):
 			try:
 				label = item['pattern'].format(ident,item['label'],item['value'])
 				if isinstance(item['value'],unicode):
-					item['value'] =  item['value'].encode('utf8')
+					item['value'] = item['value'].encode('utf8')
 				print ('{0:' + str(max(width,0)+15) + '}{1}').format(label,str(item['value']))
 			except:
 				print "ERROR"
 				print myList
 				sys.exit()
+				
+def toJSON(configValue,hidePasswords=True):
+	if (isinstance(configValue,jsonConfigValue) and configValue.configParser.getType() == 'object') or isinstance(configValue,dict):
+		result={}
+		for key in configValue.keys():
+			result[key] = toJSON(configValue[key],hidePasswords)
+		return result
+	elif (isinstance(configValue,jsonConfigValue) and configValue.configParser.getType() == 'array') or isinstance(configValue,list):
+		result = []
+		for item in configValue:
+			result.append(toJSON(item,hidePasswords))
+		return result
+	elif isinstance(configValue,jsonConfigValue) and configValue.configParser.getType() in SIMPLE_TYPES:
+		if configValue.configParser.getType() == 'password' and hidePasswords:
+			return '****'
+		return configValue.value
+	else: 
+		return configValue
 
 class jsonConfigValue(object):
-	def __init__(self,configParser=None,value=None,filename=None):
+	def __init__(self,configParser=None,value=None,filename=None,path=[]):
 		if isinstance(configParser,jsonConfigParser):
 			self.configParser = configParser
 		elif isinstance(configParser,dict):
@@ -71,10 +98,13 @@ class jsonConfigValue(object):
 		else:
 			raise TypeError("configParser argument is mandatory and must be a jsonConfigParser instance")
 
-		self.setFilename(filename)
+		self.setFilename(filename,path)
 
-		if value is None:
-			self.value = None
+		if value is None or str(value) == '':
+			if 'default' in self.configParser.keys():
+				self.value = self.configParser['default']
+			else:
+				self.value = None
 		else:
 			self.setValue(value)
 			
@@ -83,39 +113,68 @@ class jsonConfigValue(object):
 		self.setValue(newConf)
 		
 	def cliChange(self):
-		newConf = self.configParser.cliChange(self.value)
+		newConf = self.configParser.cliChange(self.getValue(path=[],hidePasswords=True)) #self.value
 		self.setValue(newConf)
 			
-	def save(self,filename=None):
+	def save(self,filename=None,path=[]):
 		if filename is not None:
-			self.setFilename(filename)
+			self.setFilename(filename,path)
 		if self.filename is None:
 			raise Exception("No file specified")
+		path = list(self.path)
+		try:
+			with open(self.filename,encoding='utf8') as data_file:
+				existingData = json.load(data_file)
+		except:
+			# File not exists yet
+			if len(path)>0:
+				raise Exception("File does not exist, path must be empty")
+			existingData = {}
+			
+		data = existingData
+		if len(path)==0:
+			existingData = self.getValue(path=[],hidePasswords=False)
+		else:
+			while len(path)>1:
+				level = path.pop(0)
+				try:
+					data = data[level]
+				except:
+					raise Exception("path cannot be reached: " + str(path))
+			level = path.pop(0)
+			data[level] = self.getValue(path=[],hidePasswords=False)
 		try:
 			with open(self.filename, 'w') as outfile:
-				json.dump(self.value, outfile,encoding='utf8')
+				json.dump(existingData, outfile,encoding='utf8') #self.value
 		except:
 			raise Exception("Unable to write file {0}".format(str(self.filename)))
 
-	def load(self,filename=None):
+	def load(self,filename=None,path=[]):
 		if filename is not None:
-			self.setFilename(filename)
+			self.setFilename(filename,path)
 		if self.filename is None:
 			raise Exception("No file specified")
 		try:
-			with open(self.filename,encoding='utf8') as data_file:    
+			with open(self.filename,encoding='utf8') as data_file:
 				data = json.load(data_file)
 		except:
 			raise Exception("Unable to read file {0}".format(str(self.filename)))
+		try:
+			path = list(self.path)
+			while len(path)>0:
+				data = data[path.pop(0)]
+		except:
+			raise Exception("path cannot be reached: " + str(path))
 		self.setValue(data)
 			
-	def setFilename(self,filename=None):
+	def setFilename(self,filename=None,path=[]):
 		if filename is None:
 			self.filename = None
 			return
-		if not isinstance(filename,str):
+		if not isinstance(filename,str) and not isinstance(filename,unicode):
 			raise TypeError("Filename must be a string. {0} entered".format(str(filename)))
 		self.filename = filename
+		self.path = path
 
 	def keys(self):
 		return self.value.keys()
@@ -125,38 +184,57 @@ class jsonConfigValue(object):
 			return self.value[key]
 		else:
 			TypeError("value is not object nor list")
+	
+	def __str__(self):
+		raise Exception
+		if configParser.getType() == 'object':
+			return u"Object"
+		elif configParser.getType() == 'array':
+			return u"Array ({0})".format(str(len(self.value)))
+		elif configParser.getType() == "integer":
+			return str(self.value).encode('utf8')
+		elif configParser.getType() == "boolean":
+			return str(self.value).encode('utf8')
+		else:
+			return self.value.encode('utf8')
 		
-	def setValue(self,value,path=[]):
+	def setValue(self,src_value,path=[]):
+		value = copy.deepcopy(src_value)
 		configParser = self.getConfigParser(path)
 		if configParser.getType() == 'object':
-			result = dict(value)
+			if not isinstance(value,dict):
+				raise Exception(str(path)+": "+str(value) +" received, dict excepted (path="+str(path)+")")
+			result = {}
+			for prop in value.keys():
+				if prop not in configParser['properties']:
+					raise Exception(str(prop)+": unknown property")
+				propProperties = configParser['properties'][prop]
+				result[prop] = jsonConfigValue(propProperties,propProperties._convert(value[prop]))
+			configParser.validate(toJSON(result,hidePasswords=False)) # ICI !!!
 		elif configParser.getType() == 'array':
-			result = list(value)
+			if not isinstance(value,list):
+				raise Exception(str(path)+": "+str(value) +" received, list excepted")
+			propProperties = configParser['items']
+			result = []
+			result = [jsonConfigValue(propProperties,propProperties._convert(val)) for val in value if val is not None]
+			json = toJSON(result,hidePasswords=False)
+			configParser.validate(json)
 		elif configParser.getType() in SIMPLE_TYPES:
 			result = copy.copy(value)
-		configParser.validate(result)
+			configParser.validate(result)
 		self.value = result
 
 	def getValue(self,path=[],hidePasswords=True):
-		value = self.value
-		configParser = self.getConfigParser(path=path)
+		value = self #.value
 		if len(path) > 0:
 			for level in path:
-				if (isinstance(value,dict) and level in value.keys()) or (isinstance(value,list) and len(value) > level):
+				if value.getType() == 'object' and level in value.value.keys():
+					value = value[level]
+				elif value.getType() == 'array' and len(value.value	) > level:
 					value = value[level]
 				else:
 					return None
-		if configParser.getType() == "object":
-			result={}
-			for key in value.keys():
-				result[key] = self.getValue(path=path+[key],hidePasswords=hidePasswords)
-			return result
-		elif configParser.getType() == 'array':
-			return [self.getValue(path=path+[item[0]],hidePasswords=hidePasswords) for item in enumerate(value)]
-		elif configParser.getType() == 'password' and hidePasswords:
-			return '****'
-		else: 
-			return value
+		return toJSON(value,hidePasswords)
 
 	def getConfigParser(self,path=[]):
 		configParser = self.configParser
@@ -167,9 +245,14 @@ class jsonConfigValue(object):
 				else:
 					configParser = configParser['properties'][level]
 		return configParser
+		
+	def getType(self,path=[]):
+		configParser = self.getConfigParser(path)
+		return configParser.getType()
 
 	def update(self,value,appendArray=False):
-		deepupdate(self.value,value,appendArray)
+		self.value = deepupdate(toJSON(self.value,hidePasswords=False),value,appendArray)
+		self.configParser.validate(self.getValue())
 
 	def choose(self,path=[]):
 		value = self.getValue(path)
@@ -185,7 +268,7 @@ class jsonConfigValue(object):
 			target_path = []
 			for key,line in enumerate(lines[1]):
 				label = pattern.SIMPLE.format('',line['label'])
-				line['value'] =  line['value'].encode('utf8')
+				line['value'] = line['value']
 				choices.append(('{0:' + str(max(width,0)+15) + '}{1}').format(label,line['value']))
 				target_path.append(line['path'])
 			reponse = Prompt.promptChoice(question,choices,warning='',selected=[],default = None,mandatory=True,multi=False)

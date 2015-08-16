@@ -26,16 +26,18 @@ definitions =  {
 	},
 }
 
-SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file','email']
+SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file','email','hidden']
 
-def loadParserFromFile(filename):
-	if not isinstance(filename,str):
+def loadParserFromFile(filename,path=[]):
+	if not isinstance(filename,str) and not isinstance(filename,unicode):
 		raise TypeError("Filename must be a string. {0} entered".format(str(filename)))
 	try:
 		with open(filename) as data_file:    
 			confschema = json.load(data_file)
 	except:
 		raise Exception("Cannot parse {0}".format(str(filename)))
+	while len(path)>0:
+		confschema = confschema[path.pop(0)]
 	return jsonConfigParser(confschema)
 	
 class jsonConfigParser(dict):
@@ -133,7 +135,11 @@ class jsonConfigParser(dict):
 					result = choices.keys()[result]
 				try:
 					result = self._convert(result)
-					self.validate(result)
+					if result is None:
+						if required:
+							raise Exception
+					else:
+						self.validate(result)
 					return result
 				except:
 					warning='Incorrect answer, {0} expected'.format(self.getType())
@@ -178,7 +184,9 @@ class jsonConfigParser(dict):
 			choices = ['Add','Delete','Reset all']
 			reponse = Prompt.promptChoice('** Managed {0}'.format(self['title']),choices,warning=warning,selected=[],default = None,mandatory=True,multi=False)
 			if reponse == 0: # Add
-				json.append(self['items'].cliCreate())
+				element = self['items'].cliCreate()
+				if element is not None:
+					json.append(element)
 				return json
 			elif reponse == 1: # Delete
 				result = Prompt.promptSingle(
@@ -231,7 +239,8 @@ class jsonConfigParser(dict):
 					width = len(max([prop['title'] for prop in self['items']['properties'].values()],key=len))
 				for prop in sorted(self['items']['properties'].items(),key=lambda k:k[1]['order']):
 					if prop[1].getType() in SIMPLE_TYPES:
-						lines.append(prop[1].display(item[prop[0]],width=width,ident=str(ident)+str(' ')))
+						val = item[prop[0]] if prop[0] in item else None
+						lines.append(prop[1].display(val,width=width,ident=str(ident)+str(' ')))
 					elif prop[1].getType() == 'array':
 						value = '{0} managed'.format(str(len(item[prop[0]])))
 						line = ("{0} {1:" + str(width)+"} - {2}").format(str(ident),prop[1]['title'],value)
@@ -281,6 +290,37 @@ class jsonConfigParser(dict):
 		return ''
 		
 	def _convert(self,value):
-		if self.getType() == "integer":
+		if (value is None or value == "") and 'default' in self.keys():
+			return self['default']
+			
+		if value is None or value == "":
+			return None
+		elif self.getType() == "integer":
+			if value is None or value == "":
+				return None
 			return int(value)
+		elif self.getType() == "object":
+			result = {}
+			for prop in self['properties'].keys():
+				if prop not in value.keys():
+					value[prop] = None
+			for prop in value.keys():
+				if prop in self['properties'].keys():
+					element = self['properties'][prop]._convert(value[prop])
+					if element is not None:
+						result[prop] = element
+				else:
+					raise("Unknown key: " + str(prop))
+			if result == {}:
+				return None
+			return result
+		elif self.getType() == "array":
+			result = []
+			for prop in value:
+				element = self['items']._convert(prop)
+				if element is not None:
+					result.append(element)
+			if len(result)==0:
+				return None
+			return result
 		return value
