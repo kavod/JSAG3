@@ -4,19 +4,19 @@ from __future__ import unicode_literals
 
 import os
 import unittest
-import jsonConfigParser
-import jsonConfigValue
+import JSAGparser as JSAG
+import JSAGdata as JSAG
 import json
 from random import randint
 import tempfile
 import copy
 
-class TestJsonConfigValue(unittest.TestCase):
+class Test_JSAGdata(unittest.TestCase):
 	def setUp(self):
 		directory = os.path.dirname(os.path.abspath(__file__))
 		self.schemaFilename = directory + '/../example.jschem'
 		self.dataFilename = directory + '/../example.json'
-		self.jcp = jsonConfigValue.loadParserFromFile(self.schemaFilename)
+		self.parser = JSAG.loadParserFromFile(self.schemaFilename)
 		self.value0 = [{u"firstName": u"Dana", u"lastName": u"Scully", u"sex": u"f",u"age":randint(0,150)}]
 		self.value1 = copy.deepcopy(self.value0)
 		self.value2 = copy.deepcopy(self.value0)
@@ -43,12 +43,12 @@ class TestJsonConfigValue(unittest.TestCase):
 		self.assertEqual(self.value0,self.value1)
 		
 	def test_creation(self):
-		self.data = jsonConfigValue.jsonConfigValue(configParser=self.jcp,value=self.value1,filename=self.dataFilename)
-		self.assertIsInstance(self.data,jsonConfigValue.jsonConfigValue)
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1,filename=self.dataFilename)
+		self.assertIsInstance(self.data,JSAG.JSAGdata)
 		self.validate()
 
 	def test_load(self):
-		self.data = jsonConfigValue.jsonConfigValue(configParser=self.jcp,value=None,filename=self.dataFilename)
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=None,filename=self.dataFilename)
 		self.data.load()
 		self.validate()
 
@@ -74,15 +74,15 @@ class TestJsonConfigValue(unittest.TestCase):
 
 	# load array element
 	def test_load_with_path(self):
-		self.jcp = jsonConfigValue.loadParserFromFile(self.schemaFilename,path=['items'])
-		self.data = jsonConfigValue.jsonConfigValue(configParser=self.jcp,value=None,filename=self.dataFilename,path=[0])
+		self.parser = JSAG.loadParserFromFile(self.schemaFilename,path=['items'])
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=None,filename=self.dataFilename,path=[0])
 		self.data.load()
 		self.assertIsInstance(self.data.getValue(),dict)
 
 	# load simple element
 	def test_load_with_path1(self):
-		self.jcp = jsonConfigValue.loadParserFromFile(self.schemaFilename,path=['items','properties','sex'])
-		self.data = jsonConfigValue.jsonConfigValue(configParser=self.jcp,value=None,filename=self.dataFilename,path=[0,u'sex'])
+		self.parser = JSAG.loadParserFromFile(self.schemaFilename,path=['items','properties','sex'])
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=None,filename=self.dataFilename,path=[0,u'sex'])
 		self.data.load()
 		self.assertIsInstance(self.data.getValue(),unicode)
 	
@@ -130,9 +130,9 @@ class TestJsonConfigValue(unittest.TestCase):
 
 	def test_getConfigParser(self):
 		self.test_load()
-		self.assertIsInstance(self.data.getConfigParser(),jsonConfigParser.jsonConfigParser)
-		self.assertIsInstance(self.data.getConfigParser(path=[0]),jsonConfigParser.jsonConfigParser)
-		self.assertIsInstance(self.data.getConfigParser(path=[0,u'sex']),jsonConfigParser.jsonConfigParser)
+		self.assertIsInstance(self.data.getConfigParser(),JSAG.JSAGparser)
+		self.assertIsInstance(self.data.getConfigParser(path=[0]),JSAG.JSAGparser)
+		self.assertIsInstance(self.data.getConfigParser(path=[0,u'sex']),JSAG.JSAGparser)
 		
 	def test_getType(self):
 		self.test_load()

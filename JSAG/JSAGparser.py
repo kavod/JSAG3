@@ -38,9 +38,9 @@ def loadParserFromFile(filename,path=[]):
 		raise Exception("Cannot parse {0}".format(str(filename)))
 	while len(path)>0:
 		confschema = confschema[path.pop(0)]
-	return jsonConfigParser(confschema)
+	return JSAGparser(confschema)
 	
-class jsonConfigParser(dict):
+class JSAGparser(dict):
 	def __init__(self,*args):
 		self.defPattern = 'def'
 		dict.__init__(self,*args)
@@ -48,11 +48,11 @@ class jsonConfigParser(dict):
 			for item in self['properties'].iteritems():
 				newitem = dict(item[1])
 				newitem.update(definitions)
-				self['properties'][item[0]] = jsonConfigParser(newitem)
+				self['properties'][item[0]] = JSAGparser(newitem)
 		elif self.getType() == 'array' and 'items' in self.keys():
 			newitem = dict(self['items'])
 			newitem.update(definitions)
-			self['items'] = jsonConfigParser(newitem)
+			self['items'] = JSAGparser(newitem)
 				
 		self.update(definitions)
 		jsonschema.Draft4Validator.check_schema(self)

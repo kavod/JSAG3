@@ -1,7 +1,7 @@
 /**
  * Usage:
  *
- *  * jcp.create_form(node,id,schema,data);
+ *  * JSAG.create_form(node,id,schema,data);
  *  	Will insert a form based on the schema defaulted with the data
  *  @param {node} node: reference to a node element which will contain the generated <FORM>
  *      Note that all existing contents of the node element will be erased
@@ -11,7 +11,7 @@
  *      It is highly recommended to NOT communicate clear content of password fields (replace with genetic values as ****)
  */
 
-;jcp = {
+;JSAG = {
 
 	SIMPLE_TYPES: ['string','password','choices','integer','hostname','boolean','file','email'],
 	SCHEMA: {},
@@ -69,7 +69,7 @@
 		myDefault = (typeof(config) === "undefined") ? (('default' in schema) ? schema['default'] : '') : config;
 
 		var node;
-		if (jcp.getType(schema)=='object')
+		if (JSAG.getType(schema)=='object')
 		{
 			node = $("<fieldset>")
 					.attr('id',id)
@@ -90,17 +90,17 @@
 			map = [];
 			$.each(sortedItems,function(index,item)
 			{
-				item_id = jcp.full_id(id,item['id']);
+				item_id = JSAG.full_id(id,item['id']);
 				required = ('required' in schema && schema['required'].indexOf(item['id'])> -1);
 				value = (typeof(config) !== "undefined" && item['id'] in config) ? config[item['id']] : undefined;
 
-				nodeItem = jcp.form_generate(item_id,item['item'],required,value,'%s',level+1);
+				nodeItem = JSAG.form_generate(item_id,item['item'],required,value,'%s',level+1);
 				node.append(nodeItem);
 				map[item['id']] = item_id;
 			});
 			return node;
 		}
-		else if (jcp.getType(schema) == 'array')
+		else if (JSAG.getType(schema) == 'array')
 		{
 			node = $("<fieldset>")
 					.attr('id',id)
@@ -113,20 +113,20 @@
 							event.preventDefault();
 							defRegex = /^(.*)_([0-9]+)$/i;
 							myID = defRegex.exec($('#'+event.target.id).prev()[0].id);
-							jcp.updateValuesCache(event.target.closest('form'));
-							jcp.getFromJSON(jcp.VALUES,id).push(
-								jcp.getFromJSON(
+							JSAG.updateValuesCache(event.target.closest('form'));
+							JSAG.getFromJSON(JSAG.VALUES,id).push(
+								JSAG.getFromJSON(
 										$('<form>')
-										.append(jcp.form_generate(id + '_',schema['items'],true,undefined,'Add %s',level+1))
+										.append(JSAG.form_generate(id + '_',schema['items'],true,undefined,'Add %s',level+1))
 										.serializeObject()
 									,id+'_0')
 								);
-							jcp.updateForms();
+							JSAG.updateForms();
 						});
 			node.append(newNode);
 			return node;
 		}
-		else if (jcp.getType(schema) == 'password')
+		else if (JSAG.getType(schema) == 'password')
 		{
 			node = $("<div>")
 					.append($("<label>")
@@ -137,17 +137,17 @@
 					.append($("<input>")
 						.attr("type","password")
 						.attr("placeholder",schema['placeholder'])
-						.attr("name",jcp.idToName(id))
+						.attr("name",JSAG.idToName(id))
 						.attr("id",id)
 						.prop("required",required));
 			return node;
 		}
-		else if (jcp.getType(schema) == 'integer')
+		else if (JSAG.getType(schema) == 'integer')
 		{
 			inputNode = $("<input>")
 						.attr("type","number")
 						.attr("placeholder",schema['placeholder'])
-						.attr("name",jcp.idToName(id))
+						.attr("name",JSAG.idToName(id))
 						.attr("id",id)
 						.prop("required",required);
 			if ('minimum' in schema)
@@ -165,7 +165,7 @@
 					.append(inputNode);
 			return node;
 		}
-		else if (jcp.getType(schema) == 'email')
+		else if (JSAG.getType(schema) == 'email')
 		{
 			node = $("<div>")
 					.append($("<label>").html(str_format.replace('%s',schema['title']))
@@ -175,16 +175,16 @@
 					.append($("<input>")
 						.attr("type","email")
 						.attr("placeholder",schema['placeholder'])
-						.attr("name",jcp.idToName(id))
+						.attr("name",JSAG.idToName(id))
 						.attr("id",id)
 						.prop("required",required));
 			return node;
 		}
-		else if (jcp.getType(schema) == 'boolean')
+		else if (JSAG.getType(schema) == 'boolean')
 		{
 			nodeSelect = $("<input>")
 						.attr('type','checkbox')
-						.attr("name",jcp.idToName(id))
+						.attr("name",JSAG.idToName(id))
 						.attr("id",id);
 
 			node = $("<div>")
@@ -195,10 +195,10 @@
 					.append(nodeSelect);
 			return node;
 		}
-		else if (jcp.getType(schema) == 'choices')
+		else if (JSAG.getType(schema) == 'choices')
 		{
 			nodeSelect = $("<select>")
-						.attr("name",jcp.idToName(id))
+						.attr("name",JSAG.idToName(id))
 						.attr("id",id)
 						.prop("required",required);
 					
@@ -227,7 +227,7 @@
 					.append(nodeSelect);
 			return node;
 		}
-		else if (jcp.SIMPLE_TYPES.indexOf(jcp.getType(schema))>-1)
+		else if (JSAG.SIMPLE_TYPES.indexOf(JSAG.getType(schema))>-1)
 		{
 			node = $("<div>")
 					.append($("<label>").html(str_format.replace('%s',schema['title']))
@@ -235,7 +235,7 @@
 						.attr('for',id)
 						)
 					.append($("<input>")
-						.attr("name",jcp.idToName(id))
+						.attr("name",JSAG.idToName(id))
 						.attr("id",id)
 						.attr("placeholder",schema['placeholder'])
 						.prop("required",required));
@@ -251,7 +251,7 @@
 		myDefault = (typeof(config) === "undefined") ? (('default' in schema) ? schema['default'] : '') : config;
 
 		var node;
-		if (jcp.getType(schema)=='object')
+		if (JSAG.getType(schema)=='object')
 		{
 			sortedItems = [];
 			$.each(schema['properties'],function(index,item)
@@ -268,13 +268,13 @@
 
 			$.each(sortedItems,function(index,item)
 			{
-				item_id = jcp.full_id(id,item['id']);
+				item_id = JSAG.full_id(id,item['id']);
 				value = (typeof(config) !== "undefined" && item['id'] in config) ? config[item['id']] : undefined;
 
-				jcp.form_setValue(item_id,item['item'],value,level+1);
+				JSAG.form_setValue(item_id,item['item'],value,level+1);
 			});
 		}
-		else if (jcp.getType(schema) == 'array')
+		else if (JSAG.getType(schema) == 'array')
 		{
 			$('#' + id +'>:not(.new):not(legend)').remove();
 			if (config != undefined)
@@ -282,47 +282,47 @@
 				node = $('#' + id +'>.new');
 				$.each(config,function(index,item) {
 					node.before(
-						jcp.form_generate(id + '_' + index,schema['items'],true,item,'%s '+(index+1),level+1)
+						JSAG.form_generate(id + '_' + index,schema['items'],true,item,'%s '+(index+1),level+1)
 							.append($('<input>')
 								.attr('type','button')
 								.attr('value','Delete')
 								.on('click',function(event) {
 										$('#'+id + '_' + index).parent().remove();
-										jcp.updateValuesCache(event.target.closest('form'));
-										jcp.updateForms();
+										JSAG.updateValuesCache(event.target.closest('form'));
+										JSAG.updateForms();
 									})
 							)
 					);
 				});
 		
 				$.each(config,function(index,item) {
-					jcp.form_setValue(id + '_' + (index),schema['items'],item,level+1);
+					JSAG.form_setValue(id + '_' + (index),schema['items'],item,level+1);
 				});
 			}
 		}
-		else if (jcp.getType(schema) == 'password')
+		else if (JSAG.getType(schema) == 'password')
 		{
 			$('#' + id ).val(myDefault);
 		}
-		else if (jcp.getType(schema) == 'integer')
+		else if (JSAG.getType(schema) == 'integer')
 		{
 			$('#' + id ).val(myDefault);
 		}
-		else if (jcp.getType(schema) == 'email')
+		else if (JSAG.getType(schema) == 'email')
 		{
 			$('#' + id ).val(myDefault);
 		}
-		else if (jcp.getType(schema) == 'boolean')
+		else if (JSAG.getType(schema) == 'boolean')
 		{
 			nodeSelect = $('#' + id );
 			nodeSelect.prop("checked",myDefault);
 		}
-		else if (jcp.getType(schema) == 'choices')
+		else if (JSAG.getType(schema) == 'choices')
 		{
 			nodeSelect = $('#' + id );
 			nodeSelect.val(myDefault);
 		}
-		else if (jcp.SIMPLE_TYPES.indexOf(jcp.getType(schema))>-1)
+		else if (JSAG.SIMPLE_TYPES.indexOf(JSAG.getType(schema))>-1)
 		{
 			$('#' + id ).val(myDefault);
 		}
@@ -332,7 +332,7 @@
 	{
 		var max_left;
 		var cut_left;
-		if (jcp.getType(schema)=='object')
+		if (JSAG.getType(schema)=='object')
 		{
 			max_left = 0;
 			sortedItems = [];
@@ -352,8 +352,8 @@
 			$.each(sortedItems,function(index,item)
 			{
 				value = (typeof(config) !== "undefined" && item['id'] in config) ? config[item['id']] : undefined;
-				item_id = jcp.full_id(id,item['id']);
-				cur_left = jcp.create_events(item_id,item['item'],value);
+				item_id = JSAG.full_id(id,item['id']);
+				cur_left = JSAG.create_events(item_id,item['item'],value);
 				max_left = (max_left < cur_left) ? cur_left : max_left;
 				map[item['id']] = item_id;
 			});
@@ -370,21 +370,21 @@
 						myevent['if_val'][index] = "";
 					}
 					myevent['map'] = map;
-					myevent['if_prop'] = jcp.full_id(id,myevent['if_prop']);
-					myevent['then_prop'] = jcp.full_id(id,myevent['then_prop']);
-					$('#'+myevent['if_prop']).on("change",myevent,jcp.show_hide);
-					jcp.show_hide({"data":myevent});
+					myevent['if_prop'] = JSAG.full_id(id,myevent['if_prop']);
+					myevent['then_prop'] = JSAG.full_id(id,myevent['then_prop']);
+					$('#'+myevent['if_prop']).on("change",myevent,JSAG.show_hide);
+					JSAG.show_hide({"data":myevent});
 				});
 			}
 			return max_left;
 		}
-		else if (jcp.getType(schema) == 'array')
+		else if (JSAG.getType(schema) == 'array')
 		{
 			max_left = 0;
 			if (config != undefined)
 			{
 				$.each(config,function(index,item) {
-					cur_left = jcp.create_events(id + '_' + (index),schema['items'],item);
+					cur_left = JSAG.create_events(id + '_' + (index),schema['items'],item);
 					max_left = (max_left < cur_left) ? cur_left : max_left;
 				});
 			}
@@ -401,44 +401,44 @@
 			config = {};
 		node.html('');
 		formNode = $("<form>")
-				.append(jcp.form_generate(id,schema,false,config))
+				.append(JSAG.form_generate(id,schema,false,config))
 				.append($('<input>')
 					.attr('type','submit')
 					.attr('id',id + '_submit')
 					);
 		node.append(formNode);
-		jcp.SCHEMA[id] = schema;
+		JSAG.SCHEMA[id] = schema;
 		if (jQuery.isEmptyObject(config))
 		{
-			if (jcp.getType(schema) == 'object')
-				jcp.VALUES[id] = {};
-			else if (jcp.getType(schema) == 'array')
-				jcp.VALUES[id] = [];
+			if (JSAG.getType(schema) == 'object')
+				JSAG.VALUES[id] = {};
+			else if (JSAG.getType(schema) == 'array')
+				JSAG.VALUES[id] = [];
 			else
-				jcp.VALUES[id] = '';
+				JSAG.VALUES[id] = '';
 		}
 		else
 		{
-			jcp.VALUES[id] = config;
+			JSAG.VALUES[id] = config;
 		}
 		
-		jcp.updateForms();
+		JSAG.updateForms();
 		
 		return formNode;
 	},
 	
 	updateValuesCache: function(form)
 	{
-		jcp.VALUES = $(form).serializeObject();
+		JSAG.VALUES = $(form).serializeObject();
 	},
 	
 	updateForms: function()
 	{
-		for (key in jcp.VALUES)
+		for (key in JSAG.VALUES)
 		{
-			jcp.form_setValue(key,jcp.SCHEMA[key],jcp.VALUES[key]);
-			jcp.create_events(key,jcp.SCHEMA[key],jcp.VALUES[key]);
-			jcp.align_values(jcp.SCHEMA[key],jcp.VALUES[key]);
+			JSAG.form_setValue(key,JSAG.SCHEMA[key],JSAG.VALUES[key]);
+			JSAG.create_events(key,JSAG.SCHEMA[key],JSAG.VALUES[key]);
+			JSAG.align_values(JSAG.SCHEMA[key],JSAG.VALUES[key]);
 		}
 	},
 	
@@ -465,9 +465,9 @@
 		var maxLabelNv = Array(9);
 		for(var i = 1 ; i < 10 ; i++)
 			$("label.nv" + i.toString()).css('width','auto');
-		var maxInput = jcp.maxLeft("input,select");
+		var maxInput = JSAG.maxLeft("input,select");
 		for(var i = 1 ; i < 10 ; i++)
-			maxLabelNv[i] = jcp.maxLeft("label.nv" + i.toString());
+			maxLabelNv[i] = JSAG.maxLeft("label.nv" + i.toString());
 		$("label").css('display','inline-block');
 		for(var i = 1 ; i < 10 ; i++)
 			$("label.nv" + i.toString()).css('width',maxInput-maxLabelNv[i]+10);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #encoding:utf-8
 
-from jsonConfigParser import *
+from JSAGparser import *
 import Prompt
 from codecs import open
 
@@ -72,31 +72,31 @@ def printList(myList,ident="",width=0):
 				sys.exit()
 				
 def toJSON(configValue,hidePasswords=True):
-	if (isinstance(configValue,jsonConfigValue) and configValue.configParser.getType() == 'object') or isinstance(configValue,dict):
+	if (isinstance(configValue,JSAGdata) and configValue.configParser.getType() == 'object') or isinstance(configValue,dict):
 		result={}
 		for key in configValue.keys():
 			result[key] = toJSON(configValue[key],hidePasswords)
 		return result
-	elif (isinstance(configValue,jsonConfigValue) and configValue.configParser.getType() == 'array') or isinstance(configValue,list):
+	elif (isinstance(configValue,JSAGdata) and configValue.configParser.getType() == 'array') or isinstance(configValue,list):
 		result = []
 		for item in configValue:
 			result.append(toJSON(item,hidePasswords))
 		return result
-	elif isinstance(configValue,jsonConfigValue) and configValue.configParser.getType() in SIMPLE_TYPES:
+	elif isinstance(configValue,JSAGdata) and configValue.configParser.getType() in SIMPLE_TYPES:
 		if configValue.configParser.getType() == 'password' and hidePasswords:
 			return '****'
 		return configValue.value
 	else: 
 		return configValue
 
-class jsonConfigValue(object):
+class JSAGdata(object):
 	def __init__(self,configParser=None,value=None,filename=None,path=[]):
-		if isinstance(configParser,jsonConfigParser):
+		if isinstance(configParser,JSAGparser):
 			self.configParser = configParser
 		elif isinstance(configParser,dict):
-			self.configParser = jsonConfigParser(configParser)
+			self.configParser = JSAGparser(configParser)
 		else:
-			raise TypeError("configParser argument is mandatory and must be a jsonConfigParser instance")
+			raise TypeError("configParser argument is mandatory and must be a JSAGparser instance")
 
 		self.setFilename(filename,path)
 
@@ -209,14 +209,14 @@ class jsonConfigValue(object):
 				if prop not in configParser['properties']:
 					raise Exception(str(prop)+": unknown property")
 				propProperties = configParser['properties'][prop]
-				result[prop] = jsonConfigValue(propProperties,propProperties._convert(value[prop]))
+				result[prop] = JSAGdata(propProperties,propProperties._convert(value[prop]))
 			configParser.validate(toJSON(result,hidePasswords=False)) # ICI !!!
 		elif configParser.getType() == 'array':
 			if not isinstance(value,list):
 				raise Exception(str(path)+": "+str(value) +" received, list excepted")
 			propProperties = configParser['items']
 			result = []
-			result = [jsonConfigValue(propProperties,propProperties._convert(val)) for val in value if val is not None]
+			result = [JSAGdata(propProperties,propProperties._convert(val)) for val in value if val is not None]
 			json = toJSON(result,hidePasswords=False)
 			configParser.validate(json)
 		elif configParser.getType() in SIMPLE_TYPES:

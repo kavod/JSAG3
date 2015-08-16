@@ -5,7 +5,7 @@ import os
 import sys
 import cherrypy
 import json
-import jsonConfigParser
+import JSAG
 
 class Root(object):
 	exposed = True
@@ -13,7 +13,7 @@ class Root(object):
 	# If GET method is called, just return the html file
 	@cherrypy.tools.accept(media='text/plain')
 	def GET(self):
-		with open ("jcp.html", "r") as myfile:
+		with open ("example.html", "r") as myfile:
 			return myfile.read()
 
 	# If POST method is called, process the submitted form
@@ -23,16 +23,16 @@ class Root(object):
 		rawbody = cherrypy.request.body.read(int(cl))
 		value = json.loads(rawbody)
 		# Load schema
-		schema = jsonConfigParser.loadParserFromFile('example.jschem')
+		schema = JSAG.loadParserFromFile('example.jschem')
 		values = value['conf']
 		try:
-			# Create a jsonConfigParser object
-			cp = jsonConfigParser.jsonConfigParser(schema)
+			# Create a JSAGparser object
+			cp = JSAG.JSAGparser(schema)
 		except:
 			return str(schema)
-		# Load JSON values with the jsonConfigParser object
+		# Load JSON values with the JSAGparser object
 		# This JSON will be validated
-		value = jsonConfigParser.jsonConfigValue(cp,values,'example.json')
+		value = JSAG.JSAGdata(cp,values,'example.json')
 		# If validated, save in the file indicated in constructor (here: example.json)
 		value.save()
 		cherrypy.response.headers['Content-Type'] = "application/json"

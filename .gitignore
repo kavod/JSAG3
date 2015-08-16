@@ -1,2 +1,6 @@
 jsonConfigParser/*.pyc
-
+*.pyc
+series.json
+test1.py
+test_TSW.py
+TSWtest.py
