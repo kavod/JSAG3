@@ -22,7 +22,7 @@ This library will allow you to manipulate your data structure (adding/deleting/m
 You write this python script:
 
 **myScript.py**
-```
+```python
 #!/usr/bin/env python
 #encoding:utf-8
 
@@ -40,13 +40,13 @@ if __name__ == '__main__':
 You do not have the chance to be called Kavod? No problem, let's put the name into a configuration file:
 
 **myData.json**
-```
+```json
 {"myName":"Kavod"}
 ```
 and let's adapt script:
 
 **myScript.py**
-```
+```python
 #!/usr/bin/env python
 #encoding:utf-8
 
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 Good good... But you have to let user have a look on the configuration and modify this name directly within the script if required
 
 **myScript.py**
-```
+```python
 #!/usr/bin/env python
 #encoding:utf-8
 
@@ -107,11 +107,11 @@ This is really a lot of codelines for a really dirty code (no input controls etc
 But the worth is when you want to modify the structure. Let's add a new data: title (Mr/Ms/Mrs)
 
 **myData.json**
-```
+```json
 {"myName":"Kavod","title":"Mr"}
 ```
 **myScript.py**
-```
+```python
 #!/usr/bin/env python
 #encoding:utf-8
 
@@ -170,7 +170,7 @@ First, I will create a JSON schema in order to describe my file structure
 If you don't know JSON schema, please have a look [on this website](http://json-schema.org/)
 
 **myData.jschem**
-```
+```json
 {
 	"type":"object",
 	"title":"Configuration",
@@ -193,7 +193,7 @@ This is only a very simple example. But, I suggest again to view documentation o
 OK, now here the new script:
 
 **myScript.py**
-```
+```python
 #!/usr/bin/env python
 #encoding:utf-8
 
