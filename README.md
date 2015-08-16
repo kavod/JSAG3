@@ -248,5 +248,5 @@ But the better: if we have to add another field (or fieldset, or list etc.), you
 Use ``unittest`` scripts of the repository to have a larger view of functionnalities
 
 ## And about Javascript?
-Well... I'm a bit tried now. But I promise to write a example soon.
+Well... I'm a bit tired now. But I promise to write a example soon.
 But you can also have a look on example in the repository. Just launch ``python example_server.py`` and go to ``http://localhost:8080``.
