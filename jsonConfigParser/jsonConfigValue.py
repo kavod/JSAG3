@@ -32,7 +32,7 @@ def deepupdate(dict1,dict2,appendArray=False):
 			dict1 = copy.deepcopy(dict2)
 	elif isinstance(dict1,dict) and isinstance(dict2,dict):
 		for key in dict2.keys():
-			if isinstance(key,'unicode') or isinstance(key,str):
+			if isinstance(key,unicode) or isinstance(key,str):
 				key = str(key)
 			if key in dict1.keys():
 				if isinstance(dict1[key],dict) and isinstance(dict2[key],dict):
