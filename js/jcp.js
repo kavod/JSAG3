@@ -105,32 +105,6 @@
 			node = $("<fieldset>")
 					.attr('id',id)
 					.append($("<legend>").html(str_format.replace('%s',schema['title'])));
-			/*newNode = $('<form>')
-						.append(jcp.form_generate(id + '_',schema['items'],true,undefined,'Add %s',level+1)
-							.append($('<input>')
-								.attr('type','button')
-								.attr('value','Add')
-								.on('click',function(event) {
-										$('#' + id + '_submit').click();
-									})
-								)
-							.append($('<input>')
-								.attr('type','submit')
-								.css('display','none')
-								.attr('id',id + '_submit')
-								)
-							)
-						.attr('id','new_' + id)
-						.on('submit',function(event) {
-							defRegex = /^(.*)_([0-9]+)$/i;
-							myID = defRegex.exec($('#'+event.target.id).prev()[0].id);
-							jcp.getFromJSON(jcp.VALUES,id).push(jcp.getFromJSON($('#'+event.target.id).serializeObject(),id)[0]);
-							jcp.updateForms();
-							$('#'+event.target.id)[0].reset();
-							event.preventDefault();
-						})
-						.addClass('new');
-			node.append(newNode);*/
 			newNode = $('<a href></a>')
 						.html('Add %s'.replace('%s',schema['title']))
 						.attr('id','new_' + id)
@@ -139,6 +113,7 @@
 							event.preventDefault();
 							defRegex = /^(.*)_([0-9]+)$/i;
 							myID = defRegex.exec($('#'+event.target.id).prev()[0].id);
+							jcp.updateValuesCache(event.target.closest('form'));
 							jcp.getFromJSON(jcp.VALUES,id).push(
 								jcp.getFromJSON(
 										$('<form>')
@@ -161,7 +136,7 @@
 						)
 					.append($("<input>")
 						.attr("type","password")
-						.attr("placeholder",schema['description'])
+						.attr("placeholder",schema['placeholder'])
 						.attr("name",jcp.idToName(id))
 						.attr("id",id)
 						.prop("required",required));
@@ -171,7 +146,7 @@
 		{
 			inputNode = $("<input>")
 						.attr("type","number")
-						.attr("placeholder",schema['description'])
+						.attr("placeholder",schema['placeholder'])
 						.attr("name",jcp.idToName(id))
 						.attr("id",id)
 						.prop("required",required);
@@ -199,7 +174,7 @@
 						)
 					.append($("<input>")
 						.attr("type","email")
-						.attr("placeholder",schema['description'])
+						.attr("placeholder",schema['placeholder'])
 						.attr("name",jcp.idToName(id))
 						.attr("id",id)
 						.prop("required",required));
@@ -212,14 +187,6 @@
 						.attr("name",jcp.idToName(id))
 						.attr("id",id);
 
-
-			/*choices = {"0":"No","1":"Yes"};
-			$.each(choices,function(key,value) {
-				nodeSelect.append($("<option>")
-							.attr("value",key)
-							.html(value)
-							);
-			});*/
 			node = $("<div>")
 					.append($("<label>").html(str_format.replace('%s',schema['title']))
 						.addClass('nv'+level)
@@ -270,7 +237,7 @@
 					.append($("<input>")
 						.attr("name",jcp.idToName(id))
 						.attr("id",id)
-						.attr("placeholder",schema['description'])
+						.attr("placeholder",schema['placeholder'])
 						.prop("required",required));
 			return node
 		}
@@ -310,24 +277,28 @@
 		else if (jcp.getType(schema) == 'array')
 		{
 			$('#' + id +'>:not(.new):not(legend)').remove();
-			node = $('#' + id +'>.new');
-			$.each(config,function(index,item) {
-				node.before(
-					jcp.form_generate(id + '_' + index,schema['items'],true,item,'%s '+(index+1),level+1)
-						.append($('<input>')
-							.attr('type','button')
-							.attr('value','Delete')
-							.on('click',function(event) {
-									jcp.getFromJSON(jcp.VALUES,id).splice(index,1);
-									jcp.updateForms();
-								})
-						)
-				);
-			});
+			if (config != undefined)
+			{
+				node = $('#' + id +'>.new');
+				$.each(config,function(index,item) {
+					node.before(
+						jcp.form_generate(id + '_' + index,schema['items'],true,item,'%s '+(index+1),level+1)
+							.append($('<input>')
+								.attr('type','button')
+								.attr('value','Delete')
+								.on('click',function(event) {
+										$('#'+id + '_' + index).parent().remove();
+										jcp.updateValuesCache(event.target.closest('form'));
+										jcp.updateForms();
+									})
+							)
+					);
+				});
 		
-			$.each(config,function(index,item) {
-				jcp.form_setValue(id + '_' + (index),schema['items'],item,level+1);
-			});
+				$.each(config,function(index,item) {
+					jcp.form_setValue(id + '_' + (index),schema['items'],item,level+1);
+				});
+			}
 		}
 		else if (jcp.getType(schema) == 'password')
 		{
@@ -343,7 +314,6 @@
 		}
 		else if (jcp.getType(schema) == 'boolean')
 		{
-			//myDefault = (myDefault) ? "1" : "0";
 			nodeSelect = $('#' + id );
 			nodeSelect.prop("checked",myDefault);
 		}
@@ -411,12 +381,13 @@
 		else if (jcp.getType(schema) == 'array')
 		{
 			max_left = 0;
-			$.each(config,function(index,item) {
-				cur_left = jcp.create_events(id + '_' + (index),schema['items'],item);
-				max_left = (max_left < cur_left) ? cur_left : max_left;
-			});
-			/*cur_left = jcp.create_events(id + '_',schema['items'],undefined);
-			max_left = (max_left < cur_left) ? cur_left : max_left;*/
+			if (config != undefined)
+			{
+				$.each(config,function(index,item) {
+					cur_left = jcp.create_events(id + '_' + (index),schema['items'],item);
+					max_left = (max_left < cur_left) ? cur_left : max_left;
+				});
+			}
 		}
 		else
 		{
@@ -429,19 +400,36 @@
 		if (typeof(config) === 'undefined')
 			config = {};
 		node.html('');
-		newNode = $("<form>")
+		formNode = $("<form>")
 				.append(jcp.form_generate(id,schema,false,config))
 				.append($('<input>')
 					.attr('type','submit')
 					.attr('id',id + '_submit')
 					);
-		node.append(newNode);
+		node.append(formNode);
 		jcp.SCHEMA[id] = schema;
-		jcp.VALUES[id] = config;
+		if (jQuery.isEmptyObject(config))
+		{
+			if (jcp.getType(schema) == 'object')
+				jcp.VALUES[id] = {};
+			else if (jcp.getType(schema) == 'array')
+				jcp.VALUES[id] = [];
+			else
+				jcp.VALUES[id] = '';
+		}
+		else
+		{
+			jcp.VALUES[id] = config;
+		}
 		
 		jcp.updateForms();
 		
-		return newNode;
+		return formNode;
+	},
+	
+	updateValuesCache: function(form)
+	{
+		jcp.VALUES = $(form).serializeObject();
 	},
 	
 	updateForms: function()
@@ -454,18 +442,6 @@
 		}
 	},
 	
-/*	schema_to_form: function(node,jcp_path,id)
-	{
-		schema_path = jcp_path + 'schema/' + id
-		values_path = jcp_path + 'values/' + id
-		$.getJSON( schema_path, function( data ) {
-			var schema = data;
-			$.getJSON( values_path, function( data ) {
-				jcp.create_form(node,id,schema,data);
-			});
-		});
-	},*/
-
 	show_hide: function(event)
 	{
 		var if_field = $('#'+event.data['if_prop'])[0];
@@ -529,6 +505,8 @@
 			result = result[reg[1]];
 			reg = myString.match(new RegExp(regex_str));
 		}
+		if (!(myString in result))
+			result[myString] = []
 		return result[myString];
 	}
 };

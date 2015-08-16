@@ -76,8 +76,10 @@ def promptSingle(question,choix=[],password=False,mandatory=False,default=None,w
 def promptYN(question,default=None):
 	str_y = 'y'
 	str_n = 'n'
+	reponse = ''
 	if default is None:
 		mandatory = True
+		default = ''
 	else:
 		mandatory = False
 		if str(default).lower() not in ['y','n']:
@@ -86,7 +88,8 @@ def promptYN(question,default=None):
 			str_y = str_y.upper()
 		else:
 			str_n = str_n.upper()
-	reponse = promptSingle('{0} [{1}/{2}]'.format(str(question),str_y,str_n),choix=[],password=False,mandatory=mandatory,default=str(default))
+	while reponse.lower() not in ['y','n']: 
+		reponse = promptSingle('{0} [{1}/{2}]'.format(str(question),str_y,str_n),choix=[],password=False,mandatory=mandatory,default=str(default))
 	return reponse.lower() == 'y'
 
 		
