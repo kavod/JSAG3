@@ -251,7 +251,7 @@ class jsonConfigValue(object):
 		return configParser.getType()
 
 	def update(self,value,appendArray=False):
-		self.value = deepupdate(self.value,value,appendArray)
+		self.value = deepupdate(toJSON(self.value,hidePasswords=False),value,appendArray)
 		self.configParser.validate(self.getValue())
 
 	def choose(self,path=[]):
