@@ -26,7 +26,7 @@ definitions =  {
 	},
 }
 
-SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file','email']
+SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file','email','hidden']
 
 def loadParserFromFile(filename,path=[]):
 	if not isinstance(filename,str) and not isinstance(filename,unicode):
