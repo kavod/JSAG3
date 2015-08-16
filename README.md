@@ -37,7 +37,7 @@ if __name__ == '__main__':
 	myFriend = helloMe()
 	myFriend.run()
 ```
-You do not have the change to be called Kavod? No problem, let's put the name into a configuration file:
+You do not have the chance to be called Kavod? No problem, let's put the name into a configuration file:
 
 **myData.json**
 ```
