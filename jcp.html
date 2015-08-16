@@ -19,7 +19,6 @@
 				$.getJSON( 'data', function( data ) {
 					// create form in <body> the node element
 					myForm = jcp.create_form($('body'),'conf',schema,data);
-					console.log(myForm);
 					myForm.on('submit',function(event) {
 						event.preventDefault();
 						
