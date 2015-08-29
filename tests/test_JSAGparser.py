@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 import os
 import unittest
-import JSAGparser as JSAG
+import JSAG
 import json
 
 

@@ -4,8 +4,7 @@ from __future__ import unicode_literals
 
 import os
 import unittest
-import JSAGparser as JSAG
-import JSAGdata as JSAG
+import JSAG
 import json
 from random import randint
 import tempfile
