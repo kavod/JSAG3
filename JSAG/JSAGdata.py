@@ -186,7 +186,6 @@ class JSAGdata(object):
 			TypeError("value is not object nor list")
 	
 	def __str__(self):
-		raise Exception
 		if configParser.getType() == 'object':
 			return u"Object"
 		elif configParser.getType() == 'array':
