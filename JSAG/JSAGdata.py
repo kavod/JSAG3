@@ -186,13 +186,13 @@ class JSAGdata(object):
 			TypeError("value is not object nor list")
 	
 	def __str__(self):
-		if configParser.getType() == 'object':
+		if self.configParser.getType() == 'object':
 			return u"Object"
-		elif configParser.getType() == 'array':
+		elif self.configParser.getType() == 'array':
 			return u"Array ({0})".format(str(len(self.value)))
-		elif configParser.getType() == "integer":
+		elif self.configParser.getType() == "integer":
 			return str(self.value).encode('utf8')
-		elif configParser.getType() == "boolean":
+		elif self.configParser.getType() == "boolean":
 			return str(self.value).encode('utf8')
 		else:
 			return self.value.encode('utf8')
