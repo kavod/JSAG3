@@ -291,9 +291,11 @@ class JSAGdata(object):
 			reponse = Prompt.promptChoice(question,choices,warning='',selected=[],default = None,mandatory=True,multi=False)
 			self.choose(target_path[reponse])
 
-	def display(self,path=[],maxLevel=-1):
+	def display(self,path=[],maxLevel=-1,cleanScreen=True):
 		lines = self.displayConf(path=path,maxLevel=maxLevel)
 		width = getWidth(lines)
+		if cleanScreen:
+			print(chr(27) + "[2J")
 		printList(lines,ident='',width=width)
 		
 	def displayConf(self,path=[],maxLevel=-1,key=''):
