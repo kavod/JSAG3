@@ -198,10 +198,12 @@ class JSAGdata(object):
 		return self.value.keys()
 
 	def __getitem__(self,key):
+		if self.value is None:
+			raise IndexError
 		if self.configParser.getType() in ['object','array']:
 			return self.value[key]
 		else:
-			TypeError("value is not object nor list")
+			raise TypeError("value is not object nor list")
 	
 	def __str__(self):
 		if self.configParser.getType() == 'object':

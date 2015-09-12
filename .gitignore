@@ -4,3 +4,5 @@ series.json
 test1.py
 test_TSW.py
 TSWtest.py
+example.py
+*.tgz

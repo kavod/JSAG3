@@ -118,6 +118,11 @@ class Test_JSAGdata(unittest.TestCase):
 		self.data.setValue(self.value1)
 		self.validate()
 		
+	def test_setValue_with_empty_array(self):
+		self.test_load()
+		self.data.setValue([])
+		self.data.getConfigParser().validate(self.data.getValue())
+		
 	def test_setValue_with_none_values(self):
 		self.test_load()
 		self.data.setValue(self.value1)
