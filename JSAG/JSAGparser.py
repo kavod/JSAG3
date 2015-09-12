@@ -64,7 +64,7 @@ class JSAGparser(dict):
 	def validate(self,json):
 		jsonschema.validate(json,self,format_checker=jsonschema.FormatChecker())
 		
-	def cliCreate(self,required=False):
+	def cliCreate(self,required=False,inList=False):
 		# Object
 		########
 		if self.getType() == 'object':
@@ -91,7 +91,7 @@ class JSAGparser(dict):
 		elif self.getType() == 'array':
 			result = []
 			while True:
-				reponse = self['items'].cliCreate()
+				reponse = self['items'].cliCreate(inList=True)
 				if self['items'].getType() in SIMPLE_TYPES:
 					if reponse is not None:
 						result.append(reponse)
@@ -119,6 +119,8 @@ class JSAGparser(dict):
 			warning = ''
 			while True:
 				description = self['placeholder'] if 'placeholder' in self.keys() else self['description'] if 'description' in self.keys() else self['title']
+				if inList:
+					description += ' [keep blank to finish]'
 				if self.getType() == 'boolean':
 					result = Prompt.promptYN(self['title'],default=default)
 				else:
