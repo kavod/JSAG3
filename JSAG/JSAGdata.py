@@ -115,6 +115,22 @@ class JSAGdata(object):
 	def cliChange(self):
 		newConf = self.configParser.cliChange(self.getValue(path=[],hidePasswords=True)) #self.value
 		self.setValue(newConf)
+		
+	def proposeSave(self,display=True,filename=None,path=[]):
+		if filename is not None:
+			self.setFilename(filename,path)
+		if display:
+			self.display()
+		if self.filename is not None:
+			if Prompt.promptYN("Save in file {0}?".format(self.filename),default='N',cleanScreen=False):
+				self.save(path=path)
+				print "Saved!"
+				return True
+			else:
+				print "Not saved!"
+				return False
+		else:
+			raise Exception("No filename specified")
 			
 	def save(self,filename=None,path=[]):
 		if filename is not None:
@@ -173,6 +189,8 @@ class JSAGdata(object):
 			return
 		if not isinstance(filename,str) and not isinstance(filename,unicode):
 			raise TypeError("Filename must be a string. {0} entered".format(str(filename)))
+		if not isinstance(path,list):
+			raise TypeError("path parameter must be a list")
 		self.filename = filename
 		self.path = path
 

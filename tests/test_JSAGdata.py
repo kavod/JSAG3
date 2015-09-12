@@ -167,4 +167,14 @@ class Test_JSAGdata(unittest.TestCase):
 	def test_choose(self,path=[0]):
 		self.test_load()
 		self.data.choose()
-		self.validate()"""
+		self.validate()
+		
+	def test_proposeSave(self):
+		with open(self.dataFilename) as data_file:    
+			data1 = json.load(data_file)
+		self.test_load()
+		self.data.proposeSave()
+		with open(self.dataFilename) as data_file:
+			data2 = json.load(data_file)
+		self.assertEqual(data1,data2)
+		"""

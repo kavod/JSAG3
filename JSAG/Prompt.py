@@ -30,12 +30,12 @@ def promptSimple(question,default = '',password=False):
 		'42'
 		
 	"""	
-def promptText(question,default = None,selected=[],warning='',password=False,mandatory=False):
+def promptText(question,default = None,selected=[],warning='',password=False,mandatory=False,cleanScreen=True):
 	while True:
 		str_default = ''
 		if default is not None:
 			str_default = '[{0}]'.format(str(default))
-		print_question('{0} {1}'.format(str(question),str_default),warning,selected)
+		print_question('{0} {1}'.format(str(question),str_default),warning,selected,cleanScreen=cleanScreen)
 		reponse = str(prompt(password))
 		if reponse == '' and default is not None:
 			return default
@@ -43,7 +43,7 @@ def promptText(question,default = None,selected=[],warning='',password=False,man
 			return reponse
 		warning = "Mandatory answer"
 		
-def globalPrompt(custo,warning=''):
+def globalPrompt(custo,warning='',cleanScreen=True):
 	'''if custo.multi:
 		return promptMulti(
 						custo.placeholder,
@@ -62,18 +62,19 @@ def globalPrompt(custo,warning=''):
 						password=(custo.type=='password'),
 						mandatory=custo.required,
 						default=custo.default,
-						warning=str(warning)
+						warning=str(warning),
+						cleanScreen=cleanScreen
 						)
 		
-def promptSingle(question,choix=[],password=False,mandatory=False,default=None,warning=''):
+def promptSingle(question,choix=[],password=False,mandatory=False,default=None,warning='',cleanScreen=True):
 	if len(choix)>0:
 		mydict = choix
-		reponse = promptChoice(question,selected=[],warning=str(warning),choix=mydict,mandatory=mandatory,default=default)
+		reponse = promptChoice(question,selected=[],warning=str(warning),choix=mydict,mandatory=mandatory,default=default,cleanScreen=cleanScreen)
 	else:
-		reponse = promptText(question,selected=[],warning=str(warning),password=password,mandatory=mandatory,default=default)
+		reponse = promptText(question,selected=[],warning=str(warning),password=password,mandatory=mandatory,default=default,cleanScreen=cleanScreen)
 	return reponse
 
-def promptYN(question,default=None):
+def promptYN(question,default=None,cleanScreen=True):
 	str_y = 'y'
 	str_n = 'n'
 	reponse = ''
@@ -89,11 +90,17 @@ def promptYN(question,default=None):
 		else:
 			str_n = str_n.upper()
 	while reponse.lower() not in ['y','n']: 
-		reponse = promptSingle('{0} [{1}/{2}]'.format(str(question),str_y,str_n),choix=[],password=False,mandatory=mandatory,default=str(default))
+		reponse = promptSingle(
+					'{0} [{1}/{2}]'.format(str(question),str_y,str_n),
+					choix=[],
+					password=False,
+					mandatory=mandatory,
+					default=str(default),
+					cleanScreen=cleanScreen)
 	return reponse.lower() == 'y'
 
 		
-def promptMulti(question,choix=[],password=False,mandatory=False):
+def promptMulti(question,choix=[],password=False,mandatory=False,cleanScreen=True):
 	reponse = None
 	result = []
 	warning = ''
@@ -105,7 +112,15 @@ def promptMulti(question,choix=[],password=False,mandatory=False):
 		if len(choix)>0:
 			mydict = choix
 			str_question = question + ' (Press "Enter" to achieve entry)' if len(result) > 0 or not mandatory else question
-			reponse = promptChoice(str_question,warning=warning,selected=result,choix=mydict,mandatory=(mandatory and len(result)<1),default=None,multi=True)
+			reponse = promptChoice(
+						str_question,
+						warning=warning,
+						selected=result,
+						choix=mydict,
+						mandatory=(mandatory and len(result)<1),
+						default=None,
+						multi=True,
+						cleanScreen=cleanScreen)
 			if reponse is None:
 				reponse = ''
 			else:
@@ -115,7 +130,13 @@ def promptMulti(question,choix=[],password=False,mandatory=False):
 					result.append(reponse)
 		else:
 			str_question = question + ' (Press "Enter" to achieve entry)' if len(result) > 0 else question
-			reponse = promptText(str_question,warning=warning,selected=result,password=password,mandatory=(mandatory and len(result)<1))
+			reponse = promptText(
+						str_question,
+						warning=warning,
+						selected=result,
+						password=password,
+						mandatory=(mandatory and len(result)<1),
+						cleanScreen=cleanScreen)
 			if str(reponse) in result:
 				warning = '!!! ' + str(reponse) + ' already entered'
 				reponse = None
@@ -124,9 +145,10 @@ def promptMulti(question,choix=[],password=False,mandatory=False):
 				result.append(reponse)
 	return result
 	
-def print_question(str_question,warning='',result=[]):
+def print_question(str_question,warning='',result=[],cleanScreen=True):
 	str_question = '* ' + str_question
-	print(chr(27) + "[2J")
+	if cleanScreen:
+		print(chr(27) + "[2J")
 	print str_question
 	print '*'*len(str_question)
 	if len(result)>0:
@@ -134,7 +156,7 @@ def print_question(str_question,warning='',result=[]):
 	if warning != '':
 		print warning
 	
-def promptChoice(question,choix,warning='',selected=[],default = None,mandatory=False,multi=False):
+def promptChoice(question,choix,warning='',selected=[],default = None,mandatory=False,multi=False,cleanScreen=True):
 	"""
 		The ``promptChoice`` function
 		=============================
@@ -184,7 +206,7 @@ def promptChoice(question,choix,warning='',selected=[],default = None,mandatory=
 			else:
 				str_selected = ''
 			str_choices += (("{0:2}: {1:" + str(width) + "} {2}").format(str(i+1),str(val),str_selected)).replace('\n','\n    ') + '\n'
-		print_question(str_question,warning=warning)
+		print_question(str_question,warning=warning,cleanScreen=cleanScreen)
 		print str_choices,
 		reponse = prompt()
 		if reponse == '':
