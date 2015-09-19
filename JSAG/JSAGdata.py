@@ -210,7 +210,7 @@ class JSAGdata(object):
 		if self.configParser.getType() == 'object':
 			return u"Object"
 		elif self.configParser.getType() == 'array':
-			return u"Array ({0})".format(str(len(self.value)))
+			return u"Array ({0})".format(unicode(len(self.value)))
 		elif self.configParser.getType() == "integer":
 			return unicode(self.value).encode('utf8')
 		elif self.configParser.getType() == "boolean":
