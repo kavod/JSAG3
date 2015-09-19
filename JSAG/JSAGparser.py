@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #encoding:utf-8
+from __future__ import unicode_literals
 
 import os
 import sys
@@ -30,12 +31,12 @@ SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','fi
 
 def loadParserFromFile(filename,path=[]):
 	if not isinstance(filename,str) and not isinstance(filename,unicode):
-		raise TypeError("Filename must be a string. {0} entered".format(str(filename)))
+		raise TypeError("Filename must be a string. {0} entered".format(unicode(filename)))
 	try:
 		with open(filename) as data_file:    
 			confschema = json.load(data_file)
 	except:
-		raise Exception("Cannot parse {0}".format(str(filename)))
+		raise Exception("Cannot parse {0}".format(unicode(filename)))
 	while len(path)>0:
 		confschema = confschema[path.pop(0)]
 	return JSAGparser(confschema)
@@ -163,16 +164,16 @@ class JSAGparser(dict):
 				if item.getType() in SIMPLE_TYPES:
 					line = item.display(json[key],width=width,ident='')
 				elif item.getType() == 'array':
-					item_count = str(len(json[key])) if key in json.keys() else "0"
+					item_count = unicode(len(json[key])) if key in json.keys() else "0"
 					value = '{0} managed'.format(item_count)
-					line = ("{0:" + str(width)+"} - {1}").format(item['title'],value)
+					line = ("{0:" + unicode(width)+"} - {1}").format(item['title'],value)
 				elif item.getType() == 'hidden':
 					continue
 				else:
 					value = 'Managed'
-					line = ("{0:" + str(width)+"} - {1}").format(item['title'],value)
+					line = ("{0:" + unicode(width)+"} - {1}").format(item['title'],value)
 				choices.append(line)
-			reponse = Prompt.promptChoice(str(self['title']),choices,warning='',selected=[],default = None,mandatory=True,multi=False)
+			reponse = Prompt.promptChoice(unicode(self['title']),choices,warning='',selected=[],default = None,mandatory=True,multi=False)
 		
 			changed_item = properties[reponse][1]
 			result = changed_item.cliChange(json[properties[reponse][0]])
@@ -222,13 +223,13 @@ class JSAGparser(dict):
 		########
 		if self.getType() == 'object':
 			lines = []
-			lines.append(str(ident)+'| \033[1m{0}\033[0m'.format(self['title']))
-			lines.append(str(ident)+('-'*(len(self['title'])+2)))
+			lines.append(unicode(ident)+'| \033[1m{0}\033[0m'.format(self['title']))
+			lines.append(unicode(ident)+('-'*(len(self['title'])+2)))
 			if width is None:
 				width = len(max([item['title'] for item in self['properties'].values()],key=len))
 			for key,item in sorted(self['properties'].items(),key=lambda k:k[1]['order']):
 				if key in json.keys():
-					lines.append(str(ident)+' '+item.display(json[key],width=width,ident=str(ident)+' '))
+					lines.append(unicode(ident)+' '+item.display(json[key],width=width,ident=unicode(ident)+' '))
 			lines = '\n'.join(lines)
 			return lines
 		# array
@@ -236,30 +237,30 @@ class JSAGparser(dict):
 		if self.getType() == 'array':
 			lines = []
 			for key,item in enumerate(json):
-				lines.append(str(ident)+'| \033[1m{0} {1}\033[0m'.format(self['items']['title'],str(key+1)))
-				lines.append(str(ident)+'-'*(len(self['title'])+4))
+				lines.append(unicode(ident)+'| \033[1m{0} {1}\033[0m'.format(self['items']['title'],unicode(key+1)))
+				lines.append(unicode(ident)+'-'*(len(self['title'])+4))
 				if width is None:
 					width = len(max([prop['title'] for prop in self['items']['properties'].values()],key=len))
 				for prop in sorted(self['items']['properties'].items(),key=lambda k:k[1]['order']):
 					if prop[1].getType() in SIMPLE_TYPES:
 						val = item[prop[0]] if prop[0] in item else None
-						lines.append(prop[1].display(val,width=width,ident=str(ident)+str(' ')))
+						lines.append(prop[1].display(val,width=width,ident=unicode(ident)+unicode(' ')))
 					elif prop[1].getType() == 'array':
-						value = '{0} managed'.format(str(len(item[prop[0]])))
-						line = ("{0} {1:" + str(width)+"} - {2}").format(str(ident),prop[1]['title'],value)
+						value = '{0} managed'.format(unicode(len(item[prop[0]])))
+						line = ("{0} {1:" + unicode(width)+"} - {2}").format(unicode(ident),prop[1]['title'],value)
 						lines.append(line)
 					elif prop[1].getType() == 'hidden':
 						continue
 					else:
 						if prop[0] in item.keys():
-							lines.append(prop[1].display(item[prop[0]],width=width,ident=str(ident)+str(' ')))
+							lines.append(prop[1].display(item[prop[0]],width=width,ident=unicode(ident)+unicode(' ')))
 				lines.append('')
 			return lines
 		# Field
 		########
 		elif self.getType() in SIMPLE_TYPES:
 			value = json if self.getType() != 'password' else '****'
-			return ("{0}{1:" + str(width)+"} - {2}").format(str(ident),self['title'],value)
+			return ("{0}{1:" + unicode(width)+"} - {2}").format(unicode(ident),self['title'],value)
 			
 		# Hidden
 		#########
@@ -313,7 +314,7 @@ class JSAGparser(dict):
 					if element is not None:
 						result[prop] = element
 				else:
-					raise("Unknown key: " + str(prop))
+					raise("Unknown key: " + unicode(prop))
 			if result == {}:
 				return None
 			return result

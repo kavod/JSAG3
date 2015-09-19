@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #encoding:utf-8
+from __future__ import unicode_literals
 
 from JSAGparser import *
 import Prompt
@@ -33,7 +34,7 @@ def deepupdate(dict1,dict2,appendArray=False):
 	elif isinstance(dict1,dict) and isinstance(dict2,dict):
 		for key in dict2.keys():
 			if isinstance(key,unicode) or isinstance(key,str):
-				key = str(key)
+				key = unicode(key)
 			if key in dict1.keys():
 				if isinstance(dict1[key],dict) and isinstance(dict2[key],dict):
 					deepupdate(dict1[key],dict2[key])
@@ -65,7 +66,7 @@ def printList(myList,ident="",width=0):
 				label = item['pattern'].format(ident,item['label'],item['value'])
 				if isinstance(item['value'],unicode):
 					item['value'] = item['value'].encode('utf8')
-				print ('{0:' + str(max(width,0)+15) + '}{1}').format(label,str(item['value']))
+				print ('{0:' + unicode(max(width,0)+15) + '}{1}').format(label,unicode(item['value']))
 			except:
 				print "ERROR"
 				print myList
@@ -100,7 +101,7 @@ class JSAGdata(object):
 
 		self.setFilename(filename,path)
 
-		if value is None or str(value) == '':
+		if value is None or unicode(value) == '':
 			if 'default' in self.configParser.keys():
 				self.value = self.configParser['default']
 			else:
@@ -156,14 +157,14 @@ class JSAGdata(object):
 				try:
 					data = data[level]
 				except:
-					raise Exception("path cannot be reached: " + str(path))
+					raise Exception("path cannot be reached: " + unicode(path))
 			level = path.pop(0)
 			data[level] = self.getValue(path=[],hidePasswords=False)
 		try:
 			with open(self.filename, 'w') as outfile:
 				json.dump(existingData, outfile,encoding='utf8') #self.value
 		except:
-			raise Exception("Unable to write file {0}".format(str(self.filename)))
+			raise Exception("Unable to write file {0}".format(unicode(self.filename)))
 
 	def load(self,filename=None,path=[]):
 		if filename is not None:
@@ -174,13 +175,13 @@ class JSAGdata(object):
 			with open(self.filename,encoding='utf8') as data_file:
 				data = json.load(data_file)
 		except:
-			raise Exception("Unable to read file {0}".format(str(self.filename)))
+			raise Exception("Unable to read file {0}".format(unicode(self.filename)))
 		try:
 			path = list(self.path)
 			while len(path)>0:
 				data = data[path.pop(0)]
 		except:
-			raise Exception("path cannot be reached: " + str(path))
+			raise Exception("path cannot be reached: " + unicode(path))
 		self.setValue(data)
 			
 	def setFilename(self,filename=None,path=[]):
@@ -188,7 +189,7 @@ class JSAGdata(object):
 			self.filename = None
 			return
 		if not isinstance(filename,str) and not isinstance(filename,unicode):
-			raise TypeError("Filename must be a string. {0} entered".format(str(filename)))
+			raise TypeError("Filename must be a string. {0} entered".format(unicode(filename)))
 		if not isinstance(path,list):
 			raise TypeError("path parameter must be a list")
 		self.filename = filename
@@ -211,9 +212,9 @@ class JSAGdata(object):
 		elif self.configParser.getType() == 'array':
 			return u"Array ({0})".format(str(len(self.value)))
 		elif self.configParser.getType() == "integer":
-			return str(self.value).encode('utf8')
+			return unicode(self.value).encode('utf8')
 		elif self.configParser.getType() == "boolean":
-			return str(self.value).encode('utf8')
+			return unicode(self.value).encode('utf8')
 		else:
 			return self.value.encode('utf8')
 		
@@ -222,17 +223,17 @@ class JSAGdata(object):
 		configParser = self.getConfigParser(path)
 		if configParser.getType() == 'object':
 			if not isinstance(value,dict):
-				raise Exception(str(path)+": "+str(value) +" received, dict excepted (path="+str(path)+")")
+				raise Exception(unicode(path)+": "+unicode(value) +" received, dict excepted (path="+unicode(path)+")")
 			result = {}
 			for prop in value.keys():
 				if prop not in configParser['properties']:
-					raise Exception(str(prop)+": unknown property")
+					raise Exception(unicode(prop)+": unknown property")
 				propProperties = configParser['properties'][prop]
 				result[prop] = JSAGdata(propProperties,propProperties._convert(value[prop]))
 			configParser.validate(toJSON(result,hidePasswords=False)) # ICI !!!
 		elif configParser.getType() == 'array':
 			if not isinstance(value,list):
-				raise Exception(str(path)+": "+str(value) +" received, list excepted")
+				raise Exception(unicode(path)+": "+unicode(value) +" received, list excepted")
 			propProperties = configParser['items']
 			result = []
 			result = [JSAGdata(propProperties,propProperties._convert(val)) for val in value if val is not None]
@@ -288,7 +289,7 @@ class JSAGdata(object):
 			for key,line in enumerate(lines[1]):
 				label = pattern.SIMPLE.format('',line['label'])
 				line['value'] = line['value']
-				choices.append(('{0:' + str(max(width,0)+15) + '}{1}').format(label,line['value']))
+				choices.append(('{0:' + unicode(max(width,0)+15) + '}{1}').format(label,line['value']))
 				target_path.append(line['path'])
 			reponse = Prompt.promptChoice(question,choices,warning='',selected=[],default = None,mandatory=True,multi=False)
 			self.choose(target_path[reponse])
@@ -325,7 +326,7 @@ class JSAGdata(object):
 				if maxLevel != 0:
 					val = ''
 				else:
-					val = str(len(value)) + " managed"
+					val = unicode(len(value)) + " managed"
 			label = "List of " + configParser['title']
 			lines.append({'pattern':pattern.LIST,"label":label,"value":val,"path":path})
 			if value is not None and maxLevel != 0:
@@ -344,10 +345,10 @@ class JSAGdata(object):
 		configParser = self.getConfigParser(path)
 		for key,item in enumerate(value):
 			if configParser['items'].getType() == 'object':
-				lines+=self.displayConf(path=path+[key],maxLevel=maxLevel,key=' '+str(key+1))
+				lines+=self.displayConf(path=path+[key],maxLevel=maxLevel,key=' '+unicode(key+1))
 			elif configParser['items'].getType() == 'array':
-				lines.append({'pattern':pattern.LIST,"label":configParser['title']+' '+str(key+1),"value":'',"path":path})
+				lines.append({'pattern':pattern.LIST,"label":configParser['title']+' '+unicode(key+1),"value":'',"path":path})
 			else:
-				value = str(item)
-				lines.append({'pattern':pattern.SIMPLE,"label":configParser['title']+' '+str(key+1),"value":value,"path":path})
+				value = unicode(item)
+				lines.append({'pattern':pattern.SIMPLE,"label":configParser['title']+' '+unicode(key+1),"value":value,"path":path})
 		return lines
