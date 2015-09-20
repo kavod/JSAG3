@@ -20,6 +20,7 @@ class Test_JSAGdata(unittest.TestCase):
 		self.value1 = copy.deepcopy(self.value0)
 		self.value2 = copy.deepcopy(self.value0)
 		self.value2[0].update({"spouse":None,"married":None,"children":None,"password":None})
+		self.value3 = [{u"firstName": u"Amélie", u"lastName": u"Poulain", u'married': False, u"sex": u"f",u"age":randint(0,150)}]
 		
 		# Insert data in file
 		dataContent = [{"password": "donuts", "firstName": "Homer", "lastName": "Simpson", "age": 44, "married": True, "sex": "m", "spouse": {"firstName": "Marge", "weddate": "8 years ago"}, "children": ["Bart", "Lisa", "The baby"]}]
@@ -103,7 +104,6 @@ class Test_JSAGdata(unittest.TestCase):
 		with open(self.dataFilename) as data_file:    
 			data2 = json.load(data_file)
 		self.assertEqual(data1,data2)
-		
 			
 	def test_getValue(self):
 		self.test_creation()
@@ -112,6 +112,15 @@ class Test_JSAGdata(unittest.TestCase):
 		self.assertEqual(self.data.getValue(hidePasswords=False),value)
 		self.assertEqual(self.data.getValue([0],hidePasswords=False),value[0])
 		self.assertEqual(self.data.getValue([0,u'sex'],hidePasswords=False),value[0][u'sex'])
+			
+	def test_getValue_unicode(self):
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value3,filename=self.dataFilename)
+		self.assertIsInstance(self.data,JSAG.JSAGdata)
+		self.validate()
+		value = copy.deepcopy(self.value3)
+		self.assertEqual(self.data.getValue(hidePasswords=False),value)
+		self.assertEqual(self.data.getValue([0],hidePasswords=False),value[0])
+		self.assertEqual(self.data.getValue([0,u'firstName'],hidePasswords=False),value[0][u'firstName'])
 
 	def test_setValue(self):
 		self.test_load()
@@ -131,6 +140,11 @@ class Test_JSAGdata(unittest.TestCase):
 		self.validate()
 		data2 = self.data.getValue()
 		self.assertEqual(data1,data2)
+		
+	def test_setValue_unicode(self):
+		self.test_load()
+		self.data.setValue(self.value3)
+		self.validate()
 
 	def test_getConfigParser(self):
 		self.test_load()
@@ -157,8 +171,8 @@ class Test_JSAGdata(unittest.TestCase):
 		self.test_load()
 		self.data.display()
 		
-	"""
-	# Interactive methods
+
+	"""# Interactive methods
 	def test_cliCreate(self):
 		self.test_load()
 		self.data.cliCreate()
@@ -181,5 +195,5 @@ class Test_JSAGdata(unittest.TestCase):
 		self.data.proposeSave()
 		with open(self.dataFilename) as data_file:
 			data2 = json.load(data_file)
-		self.assertEqual(data1,data2)
-		"""
+		self.assertEqual(data1,data2)"""
+		

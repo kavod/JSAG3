@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #encoding:utf-8
+from __future__ import unicode_literals
 
 import sys
 import getpass
@@ -34,9 +35,9 @@ def promptText(question,default = None,selected=[],warning='',password=False,man
 	while True:
 		str_default = ''
 		if default is not None:
-			str_default = '[{0}]'.format(str(default))
-		print_question('{0} {1}'.format(str(question),str_default),warning,selected,cleanScreen=cleanScreen)
-		reponse = str(prompt(password))
+			str_default = '[{0}]'.format(unicode(default))
+		print_question('{0} {1}'.format(unicode(question),str_default),warning,selected,cleanScreen=cleanScreen)
+		reponse = unicode(prompt(password))
 		if reponse == '' and default is not None:
 			return default
 		if reponse != '' or not mandatory:
@@ -44,15 +45,6 @@ def promptText(question,default = None,selected=[],warning='',password=False,man
 		warning = "Mandatory answer"
 		
 def globalPrompt(custo,warning='',cleanScreen=True):
-	'''if custo.multi:
-		return promptMulti(
-						custo.placeholder,
-						choix=custo.choices,
-						password=(custo.type=='password'),
-						mandatory=custo.required,
-						warning=str(warning)
-						)
-	else:'''
 	if custo.type == 'boolean':
 		return promptYN(custo.placeholder,default=custo.default)
 	else:
@@ -62,16 +54,16 @@ def globalPrompt(custo,warning='',cleanScreen=True):
 						password=(custo.type=='password'),
 						mandatory=custo.required,
 						default=custo.default,
-						warning=str(warning),
+						warning=unicode(warning),
 						cleanScreen=cleanScreen
 						)
 		
 def promptSingle(question,choix=[],password=False,mandatory=False,default=None,warning='',cleanScreen=True):
 	if len(choix)>0:
 		mydict = choix
-		reponse = promptChoice(question,selected=[],warning=str(warning),choix=mydict,mandatory=mandatory,default=default,cleanScreen=cleanScreen)
+		reponse = promptChoice(question,selected=[],warning=unicode(warning),choix=mydict,mandatory=mandatory,default=default,cleanScreen=cleanScreen)
 	else:
-		reponse = promptText(question,selected=[],warning=str(warning),password=password,mandatory=mandatory,default=default,cleanScreen=cleanScreen)
+		reponse = promptText(question,selected=[],warning=unicode(warning),password=password,mandatory=mandatory,default=default,cleanScreen=cleanScreen)
 	return reponse
 
 def promptYN(question,default=None,cleanScreen=True):
@@ -83,19 +75,19 @@ def promptYN(question,default=None,cleanScreen=True):
 		default = ''
 	else:
 		mandatory = False
-		if str(default).lower() not in ['y','n']:
+		if unicode(default).lower() not in ['y','n']:
 			default = 'n'
-		if str(default).lower() == 'y':
+		if unicode(default).lower() == 'y':
 			str_y = str_y.upper()
 		else:
 			str_n = str_n.upper()
 	while reponse.lower() not in ['y','n']: 
 		reponse = promptSingle(
-					'{0} [{1}/{2}]'.format(str(question),str_y,str_n),
+					'{0} [{1}/{2}]'.format(unicode(question),str_y,str_n),
 					choix=[],
 					password=False,
 					mandatory=mandatory,
-					default=str(default),
+					default=unicode(default),
 					cleanScreen=cleanScreen)
 	return reponse.lower() == 'y'
 
@@ -106,7 +98,7 @@ def promptMulti(question,choix=[],password=False,mandatory=False,cleanScreen=Tru
 	warning = ''
 	while reponse != '':
 		if len(result)>0:
-			selected = "Already entered: " + str(result) + "\n"
+			selected = "Already entered: " + unicode(result) + "\n"
 		else:
 			selected = ""
 		if len(choix)>0:
@@ -137,8 +129,8 @@ def promptMulti(question,choix=[],password=False,mandatory=False,cleanScreen=Tru
 						password=password,
 						mandatory=(mandatory and len(result)<1),
 						cleanScreen=cleanScreen)
-			if str(reponse) in result:
-				warning = '!!! ' + str(reponse) + ' already entered'
+			if unicode(reponse) in result:
+				warning = '!!! ' + unicode(reponse) + ' already entered'
 				reponse = None
 			elif reponse != '':
 				warning = ''
@@ -152,7 +144,7 @@ def print_question(str_question,warning='',result=[],cleanScreen=True):
 	print str_question
 	print '*'*len(str_question)
 	if len(result)>0:
-		print "Previously entered:{0}".format(str(result))
+		print "Previously entered:{0}".format(unicode(result))
 	if warning != '':
 		print warning
 	
@@ -195,17 +187,17 @@ def promptChoice(question,choix,warning='',selected=[],default = None,mandatory=
 		width = len(max(choix, key=len)) if len(choix) > 0 else 0
 		
 		if default is None and not mandatory:
-			str_question = "{0} [keep blank for none]".format(str(question))
+			str_question = "{0} [keep blank for none]".format(unicode(question))
 		else:
 			str_question = question
 		for i,val in enumerate(choix):
 			if default is not None and i == default:
-				str_question = "{0} [{1} by default]".format(str(question),str(i+1))
+				str_question = "{0} [{1} by default]".format(unicode(question),unicode(i+1))
 			if multi:
 				str_selected = str_is_selected if val[0] in selected else str_not_selected
 			else:
 				str_selected = ''
-			str_choices += (("{0:2}: {1:" + str(width) + "} {2}").format(str(i+1),str(val),str_selected)).replace('\n','\n    ') + '\n'
+			str_choices += (("{0:2}: {1:" + unicode(width) + "} {2}").format(unicode(i+1),unicode(val),str_selected)).replace('\n','\n    ') + '\n'
 		print_question(str_question,warning=warning,cleanScreen=cleanScreen)
 		print str_choices,
 		reponse = prompt()
@@ -227,10 +219,10 @@ def prompt(password=False):
 	invite = "> "
 	try:
 		if password:
-			return getpass.getpass(invite)
+			return getpass.getpass(invite).decode(sys.stdin.encoding or locale.getpreferredencoding(True))
 		else:
-			return raw_input(invite)
+			return raw_input(invite).decode(sys.stdin.encoding or locale.getpreferredencoding(True))
 	except KeyboardInterrupt:
-		print "\User interrupted"
+		print "\\User interrupted"
 		sys.exit()
 
