@@ -52,6 +52,13 @@ class Test_JSAGdata(unittest.TestCase):
 		self.data.load()
 		self.validate()
 
+	def test_load_unexisted_file(self):
+		tmpfile = unicode(tempfile.mkstemp()[1])
+		os.remove(tmpfile)
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=None,filename=tmpfile)
+		with self.assertRaises(IOError):
+			self.data.load()
+
 	def test_save(self):
 		with open(self.dataFilename) as data_file:    
 			data1 = json.load(data_file)

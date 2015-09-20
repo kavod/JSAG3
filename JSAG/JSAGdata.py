@@ -171,6 +171,8 @@ class JSAGdata(object):
 			self.setFilename(filename,path)
 		if self.filename is None:
 			raise Exception("No file specified")
+		if not os.path.isfile(self.filename):
+			raise IOError("File {0} does not exists".format(self.filename))
 		try:
 			with open(self.filename,encoding='utf8') as data_file:
 				data = json.load(data_file)
