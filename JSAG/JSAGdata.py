@@ -242,8 +242,18 @@ class JSAGdata(object):
 			json = toJSON(result,hidePasswords=False)
 			configParser.validate(json)
 		elif configParser.getType() in SIMPLE_TYPES:
-			result = copy.copy(value)
-			configParser.validate(result)
+			result = value
+			configParser.validate(value)
+		valPointer = self
+		for level in path:
+			if valPointer.getType() == 'object' and level in valPointer.value.keys():
+				valPointer = valPointer[level]
+			elif valPointer.getType() == 'array' and len(valPointer.value) > level:
+				valPointer = valPointer[level]
+			else:
+				raise Exception()
+		valPointer.value = result
+		return
 		self.value = result
 
 	def getValue(self,path=[],hidePasswords=True):

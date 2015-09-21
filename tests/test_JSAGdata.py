@@ -23,9 +23,9 @@ class Test_JSAGdata(unittest.TestCase):
 		self.value3 = [{u"firstName": u"Amélie", u"lastName": u"Poulain", u'married': False, u"sex": u"f",u"age":randint(0,150)}]
 		
 		# Insert data in file
-		dataContent = [{"password": "donuts", "firstName": "Homer", "lastName": "Simpson", "age": 44, "married": True, "sex": "m", "spouse": {"firstName": "Marge", "weddate": "8 years ago"}, "children": ["Bart", "Lisa", "The baby"]}]
+		self.dataContent = [{"password": "donuts", "firstName": "Homer", "lastName": "Simpson", "age": 44, "married": True, "sex": "m", "spouse": {"firstName": "Marge", "weddate": "8 years ago"}, "children": ["Bart", "Lisa", "The baby"]}]
 		with open(self.dataFilename, 'w') as outfile:
-			json.dump(dataContent, outfile,encoding='utf8')
+			json.dump(self.dataContent, outfile,encoding='utf8')
 	
 	def validate(self):
 		self.data.getConfigParser().validate(self.data.getValue())
@@ -152,6 +152,30 @@ class Test_JSAGdata(unittest.TestCase):
 		self.test_load()
 		self.data.setValue(self.value3)
 		self.validate()
+		
+	def test_setValue_simple_with_path(self):
+		data = copy.deepcopy(self.dataContent)
+		data[0]['firstName'] = 'Doooh'
+		self.test_load()
+		self.data.setValue(data[0]['firstName'],path=[0,u'firstName'])
+		self.validate()
+		self.assertEqual(data,JSAG.toJSON(self.data,hidePasswords=False))
+		
+	def test_setValue_object_with_path(self):
+		data = copy.deepcopy(self.dataContent)
+		data[0]['spouse'] = {"firstName": "Edna", "weddate": "just married!"}
+		self.test_load()
+		self.data.setValue(data[0]['spouse'],path=[0,'spouse'])
+		self.validate()
+		self.assertEqual(data,JSAG.toJSON(self.data,hidePasswords=False))
+		
+	def test_setValue_array_with_path(self):
+		data = copy.deepcopy(self.dataContent)
+		data[0]['children'] = ['Bart','Lisa','Maggy']
+		self.test_load()
+		self.data.setValue(data[0]['children'],path=[0,u'children'])
+		self.validate()
+		self.assertEqual(data,JSAG.toJSON(self.data,hidePasswords=False))
 
 	def test_getConfigParser(self):
 		self.test_load()
