@@ -153,6 +153,14 @@ class Test_JSAGdata(unittest.TestCase):
 		self.data.setValue(self.value3)
 		self.validate()
 		
+	def test_setValue_simple_with_none(self):
+		data = copy.deepcopy(self.dataContent)
+		data[0].pop('children',None)
+		self.test_load()
+		self.data.setValue(None,path=[0,u'children'])
+		self.validate()
+		self.assertEqual(data,JSAG.toJSON(self.data,hidePasswords=False))
+		
 	def test_setValue_simple_with_path(self):
 		data = copy.deepcopy(self.dataContent)
 		data[0]['firstName'] = 'Doooh'

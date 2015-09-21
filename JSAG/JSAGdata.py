@@ -223,7 +223,9 @@ class JSAGdata(object):
 	def setValue(self,src_value,path=[]):
 		value = copy.deepcopy(src_value)
 		configParser = self.getConfigParser(path)
-		if configParser.getType() == 'object':
+		if configParser._convert(value) is None:
+			result = None
+		elif configParser.getType() == 'object':
 			if not isinstance(value,dict):
 				raise Exception(unicode(path)+": "+unicode(value) +" received, dict excepted (path="+unicode(path)+")")
 			result = {}
@@ -231,7 +233,8 @@ class JSAGdata(object):
 				if prop not in configParser['properties']:
 					raise Exception(unicode(prop)+": unknown property")
 				propProperties = configParser['properties'][prop]
-				result[prop] = JSAGdata(propProperties,propProperties._convert(value[prop]))
+				if propProperties._convert(value[prop]) is not None:
+					result[prop] = JSAGdata(propProperties,propProperties._convert(value[prop]))
 			configParser.validate(toJSON(result,hidePasswords=False)) # ICI !!!
 		elif configParser.getType() == 'array':
 			if not isinstance(value,list):
@@ -242,19 +245,32 @@ class JSAGdata(object):
 			json = toJSON(result,hidePasswords=False)
 			configParser.validate(json)
 		elif configParser.getType() in SIMPLE_TYPES:
-			result = value
+			result = configParser._convert(value)
 			configParser.validate(value)
+			
 		valPointer = self
-		for level in path:
+		for level in path[:-1]:
 			if valPointer.getType() == 'object' and level in valPointer.value.keys():
 				valPointer = valPointer[level]
 			elif valPointer.getType() == 'array' and len(valPointer.value) > level:
 				valPointer = valPointer[level]
 			else:
 				raise Exception()
+		
+		if len(path)>0 and result is None and path[-1] in valPointer.keys():
+			valPointer.value.pop(path[-1],None)
+			return
+		elif len(path) > 0:
+			level = path[-1]
+			if valPointer.getType() == 'object' and level in valPointer.value.keys():
+				valPointer = valPointer[level]
+			elif valPointer.getType() == 'array' and len(valPointer.value) > level:
+				valPointer = valPointer[level]
+			else:
+				raise Exception()
+		
 		valPointer.value = result
 		return
-		self.value = result
 
 	def getValue(self,path=[],hidePasswords=True):
 		value = self #.value
