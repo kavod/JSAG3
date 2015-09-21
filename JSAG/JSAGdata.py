@@ -75,13 +75,15 @@ def printList(myList,ident="",width=0):
 def toJSON(configValue,hidePasswords=True):
 	if (isinstance(configValue,JSAGdata) and configValue.configParser.getType() == 'object') or isinstance(configValue,dict):
 		result={}
-		for key in configValue.keys():
-			result[key] = toJSON(configValue[key],hidePasswords)
+		if configValue is not None:
+			for key in configValue.keys():
+				result[key] = toJSON(configValue[key],hidePasswords)
 		return result
 	elif (isinstance(configValue,JSAGdata) and configValue.configParser.getType() == 'array') or isinstance(configValue,list):
 		result = []
-		for item in configValue:
-			result.append(toJSON(item,hidePasswords))
+		if configValue is not None:
+			for item in configValue:
+				result.append(toJSON(item,hidePasswords))
 		return result
 	elif isinstance(configValue,JSAGdata) and configValue.configParser.getType() in SIMPLE_TYPES:
 		if configValue.configParser.getType() == 'password' and hidePasswords:
@@ -198,12 +200,20 @@ class JSAGdata(object):
 		self.path = path
 
 	def keys(self):
+		if self.value is None:
+			return []
 		return self.value.keys()
 
 	def __getitem__(self,key):
 		if self.value is None:
 			raise IndexError
-		if self.configParser.getType() in ['object','array']:
+		if self.configParser.getType() == 'object':
+			if key not in self.value.keys():
+				raise IndexError
+			return self.value[key]
+		elif self.configParser.getType() == 'array':
+			if key >= len(self.value):
+				raise IndexError
 			return self.value[key]
 		else:
 			raise TypeError("value is not object nor list")
@@ -310,6 +320,19 @@ class JSAGdata(object):
 
 	def update(self,value,appendArray=False):
 		self.value = deepupdate(toJSON(self.value,hidePasswords=False),value,appendArray)
+		self.configParser.validate(self.getValue())
+
+	def insert(self,i,x):
+		if self.configParser.getType() != 'array':
+			raise Exception("Insert can only be used on array data")
+		tempData = toJSON(self.value,hidePasswords=False)
+		tempData.insert(i,copy.deepcopy(x))
+		self.configParser.validate(tempData)
+		
+		self.value.insert(i,JSAGdata(
+								self.configParser['items'],
+								self.configParser['items']._convert(
+									copy.deepcopy(x))))
 		self.configParser.validate(self.getValue())
 
 	def choose(self,path=[]):

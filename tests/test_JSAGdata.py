@@ -213,6 +213,13 @@ class Test_JSAGdata(unittest.TestCase):
 		self.validate()
 		self.assertEqual(self.data.getValue(),[self.value1[0],self.value1[0]])
 		
+	def test_insert(self):
+		self.test_load()
+		data = JSAG.toJSON(self.data.getValue(),hidePasswords=False)[0]
+		self.data.insert(0,self.value3[0])
+		self.validate()
+		self.assertEqual(JSAG.toJSON(self.data.getValue(),hidePasswords=False),[self.value3[0],data])
+		
 	def test_display(self):
 		self.test_load()
 		self.data.display()
