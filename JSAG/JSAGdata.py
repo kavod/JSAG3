@@ -249,26 +249,36 @@ class JSAGdata(object):
 			configParser.validate(value)
 			
 		valPointer = self
+		tempPointer = copy.deepcopy(self)
+		rootTempPointer = tempPointer
 		for level in path[:-1]:
 			if valPointer.getType() == 'object' and level in valPointer.value.keys():
 				valPointer = valPointer[level]
+				tempPointer = tempPointer[level]
 			elif valPointer.getType() == 'array' and len(valPointer.value) > level:
 				valPointer = valPointer[level]
+				tempPointer = tempPointer[level]
 			else:
 				raise Exception()
 		
 		if len(path)>0 and result is None and path[-1] in valPointer.keys():
+			tempPointer.value.pop(path[-1],None)
+			self.configParser.validate(rootTempPointer.getValue())
 			valPointer.value.pop(path[-1],None)
 			return
 		elif len(path) > 0:
 			level = path[-1]
 			if valPointer.getType() == 'object' and level in valPointer.value.keys():
 				valPointer = valPointer[level]
+				tempPointer = tempPointer[level]
 			elif valPointer.getType() == 'array' and len(valPointer.value) > level:
 				valPointer = valPointer[level]
+				tempPointer = tempPointer[level]
 			else:
 				raise Exception()
 		
+		tempPointer.value = result
+		self.configParser.validate(rootTempPointer.getValue())
 		valPointer.value = result
 		return
 

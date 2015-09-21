@@ -161,6 +161,13 @@ class Test_JSAGdata(unittest.TestCase):
 		self.validate()
 		self.assertEqual(data,JSAG.toJSON(self.data,hidePasswords=False))
 		
+	def test_setValue_simple_with_none_on_required(self):
+		self.test_load()
+		with self.assertRaises(Exception):
+			self.data.setValue(None,path=[0,u'firstName'])
+		self.validate()
+		self.assertEqual(self.dataContent,JSAG.toJSON(self.data,hidePasswords=False))
+		
 	def test_setValue_simple_with_path(self):
 		data = copy.deepcopy(self.dataContent)
 		data[0]['firstName'] = 'Doooh'
