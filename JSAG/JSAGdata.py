@@ -229,6 +229,12 @@ class JSAGdata(object):
 			return unicode(self.value).encode('utf8')
 		else:
 			return self.value.encode('utf8')
+			
+	def __len__(self):
+		if self.configParser.getType() == 'array':
+			return len(self.value)
+		else:
+			raise TypeError("JSAGdata with type {0} has no len()".format(self.configParser.getType()))
 		
 	def setValue(self,src_value,path=[]):
 		value = copy.deepcopy(src_value)
