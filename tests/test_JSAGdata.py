@@ -224,6 +224,10 @@ class Test_JSAGdata(unittest.TestCase):
 		self.test_load()
 		self.data.display()
 		
+	def test_len(self):
+		self.test_load()
+		self.assertEqual(len(self.data),1)
+	
 
 	"""# Interactive methods
 	def test_cliCreate(self):
