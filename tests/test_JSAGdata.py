@@ -79,6 +79,68 @@ class Test_JSAGdata(unittest.TestCase):
 		self.assertEqual(data1,data2)
 		f.close
 
+	def test_save_with_path_list(self):
+		tmpfile = unicode(tempfile.mkstemp()[1])
+		with open(self.dataFilename) as f:
+			with open(tmpfile,'w') as f1:
+				for line in f:
+					f1.write(line)
+		with open(self.dataFilename) as data_file:    
+			data1 = json.load(data_file)
+		data1[0]['children'] = ['Bart','Lisa','Maggie']
+		
+		self.data = JSAG.JSAGdata(configParser=self.parser['items']['properties']['children'],value=None,filename=tmpfile,path=[0,'children'])
+		self.data.setValue(['Bart','Lisa','Maggie'])
+		self.data.save()
+		
+		with open(tmpfile) as data_file:
+			data2 = json.load(data_file)
+		self.assertEqual(data1,data2)
+		os.remove(tmpfile)
+		
+	def test_save_with_path_dict(self):
+		tmpfile = unicode(tempfile.mkstemp()[1])
+		with open(self.dataFilename) as f:
+			with open(tmpfile,'w') as f1:
+				for line in f:
+					f1.write(line)
+		with open(self.dataFilename) as data_file:    
+			data1 = json.load(data_file)
+		data1[0]['spouse'] = {"firstName": "Karl", "weddate": "last night, after Moe"}
+		
+		self.data = JSAG.JSAGdata(configParser=self.parser['items']['properties']['spouse'],value=None,filename=tmpfile,path=[0,'spouse'])
+		self.data.setValue({"firstName": "Karl", "weddate": "last night, after Moe"})
+		self.data.save()
+		
+		with open(tmpfile) as data_file:
+			data2 = json.load(data_file)
+		self.assertEqual(data1,data2)
+		os.remove(tmpfile)
+		
+	def test_save_newfile_with_path_list(self):
+		tmpfile = unicode(tempfile.mkstemp()[1])
+		
+		self.data = JSAG.JSAGdata(configParser=self.parser['items'],value=None,filename=tmpfile,path=[0])
+		self.data.setValue(self.value3[0])
+		self.data.save()
+		
+		with open(tmpfile) as data_file:
+			data2 = json.load(data_file)
+		self.assertEqual(self.value3,data2)
+		os.remove(tmpfile)
+		
+	def test_save_newfile_with_path_dict(self):
+		tmpfile = unicode(tempfile.mkstemp()[1])
+		
+		self.data = JSAG.JSAGdata(configParser=self.parser['items'],value=None,filename=tmpfile,path=['choosenOne'])
+		self.data.setValue(self.value3[0])
+		self.data.save()
+		
+		with open(tmpfile) as data_file:
+			data2 = json.load(data_file)
+		self.assertEqual({'choosenOne':self.value3[0]},data2)
+		os.remove(tmpfile)
+
 	# load array element
 	def test_load_with_path(self):
 		self.parser = JSAG.loadParserFromFile(self.schemaFilename,path=['items'])

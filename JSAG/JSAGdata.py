@@ -92,6 +92,29 @@ def toJSON(configValue,hidePasswords=True):
 	else: 
 		return configValue
 
+def fusion(initial,path,data):
+	if len(path)==0:
+		initial = data
+	else:
+		if len(path)>0:
+			level = path.pop(0)
+			#dict
+			if isinstance(initial,dict) and level in initial.keys():
+				initial[level] = fusion(initial[level],path,data)
+			elif isinstance(initial,dict):
+				initial[level] = fusion({},path,data)
+			#list
+			elif isinstance(initial,list) and not isinstance(level,int):
+				raise Exception("invalid key: {0}. Int expected")
+			elif isinstance(initial,list) and len(initial)>level:
+				initial[level] = fusion(initial[level],path,data)
+			elif isinstance(initial,list) and len(initial) == level:
+				initial.append(fusion({},path,data))
+			#other????
+			else:
+				raise Exception("unexpected case")
+	return initial
+
 class JSAGdata(object):
 	def __init__(self,configParser=None,value=None,filename=None,path=[]):
 		if isinstance(configParser,JSAGparser):
@@ -147,21 +170,14 @@ class JSAGdata(object):
 		except:
 			# File not exists yet
 			if len(path)>0:
-				raise Exception("File does not exist, path must be empty")
-			existingData = {}
-			
-		data = existingData
-		if len(path)==0:
-			existingData = self.getValue(path=[],hidePasswords=False)
-		else:
-			while len(path)>1:
-				level = path.pop(0)
-				try:
-					data = data[level]
-				except:
-					raise Exception("path cannot be reached: " + unicode(path))
-			level = path.pop(0)
-			data[level] = self.getValue(path=[],hidePasswords=False)
+				if isinstance(path[0],int):
+					existingData = []
+				else:
+					existingData = {}
+			else:
+				existingData = {}
+		
+		existingData = fusion(existingData,path,self.getValue(path=[],hidePasswords=False))
 		try:
 			with open(self.filename, 'w') as outfile:
 				json.dump(existingData, outfile,encoding='utf8') #self.value
