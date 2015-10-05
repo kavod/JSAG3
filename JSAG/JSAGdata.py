@@ -350,9 +350,13 @@ class JSAGdata(object):
 		if self.configParser.getType() != 'array':
 			raise Exception("Insert can only be used on array data")
 		tempData = toJSON(self.value,hidePasswords=False)
+		if tempData is None:
+			tempData = []
 		tempData.insert(i,copy.deepcopy(x))
 		self.configParser.validate(tempData)
 		
+		if self.value is None:
+			self.value = []
 		self.value.insert(i,JSAGdata(
 								self.configParser['items'],
 								self.configParser['items']._convert(
