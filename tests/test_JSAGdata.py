@@ -289,6 +289,12 @@ class Test_JSAGdata(unittest.TestCase):
 	def test_len(self):
 		self.test_load()
 		self.assertEqual(len(self.data),1)
+		
+	def test_len_0(self):
+		self.data = JSAG.JSAGdata(configParser=self.parser,value={},filename=self.dataFilename)
+		self.assertEqual(len(self.data),0)
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=[],filename=self.dataFilename)
+		self.assertEqual(len(self.data),0)
 	
 
 	"""# Interactive methods

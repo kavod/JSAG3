@@ -248,6 +248,8 @@ class JSAGdata(object):
 			
 	def __len__(self):
 		if self.configParser.getType() == 'array':
+			if self.value is None:
+				return 0
 			return len(self.value)
 		else:
 			raise TypeError("JSAGdata with type {0} has no len()".format(self.configParser.getType()))
