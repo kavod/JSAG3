@@ -358,6 +358,9 @@ class JSAGdata(object):
 								self.configParser['items']._convert(
 									copy.deepcopy(x))))
 		self.configParser.validate(self.getValue())
+		
+	def append(self,x):
+		self.insert(len(self),x)
 
 	def choose(self,path=[]):
 		value = self.getValue(path)
