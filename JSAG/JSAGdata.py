@@ -2,6 +2,7 @@
 #encoding:utf-8
 from __future__ import unicode_literals
 
+import datetime
 from JSAGparser import *
 import Prompt
 from codecs import open
@@ -85,6 +86,8 @@ def toJSON(configValue,hidePasswords=True):
 			for item in configValue:
 				result.append(toJSON(item,hidePasswords))
 		return result
+	elif isinstance(configValue,datetime.datetime):
+		configValue.value.isoformat()
 	elif isinstance(configValue,JSAGdata) and configValue.configParser.getType() in SIMPLE_TYPES:
 		if configValue.configParser.getType() == 'password' and hidePasswords:
 			return '****'
@@ -280,7 +283,7 @@ class JSAGdata(object):
 			configParser.validate(json)
 		elif configParser.getType() in SIMPLE_TYPES:
 			result = configParser._convert(value)
-			configParser.validate(value)
+			configParser.validate(result)
 			
 		valPointer = self
 		tempPointer = copy.deepcopy(self)

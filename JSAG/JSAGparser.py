@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 import os
 import sys
 import json
+import datetime
+import dateutil.parser
 import jsonschema
 import getpass
 import re
@@ -27,7 +29,7 @@ definitions =  {
 	},
 }
 
-SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file','email','hidden']
+SIMPLE_TYPES = ['string','password','choices','integer','hostname','boolean','file','email','hidden','date-time']
 
 def loadParserFromFile(filename,path=[]):
 	if not isinstance(filename,str) and not isinstance(filename,unicode):
@@ -279,18 +281,17 @@ class JSAGparser(dict):
 					configParser = configParser['items']
 				else:
 					configParser = configParser['properties'][level]
-
-		if 'type' in configParser.keys():
-			return self['type']
-		elif 'format' in configParser.keys():
-			return self['format']
-		elif '$def' in configParser.keys():
+		if '$def' in configParser.keys():
 			matchObj = re.match(r'^#/{0}/(\w+)$'.format(self.defPattern),configParser['$def'],re.M)
 			if matchObj:
 				return matchObj.group(1)
 			matchObj = re.match(r'^#/choices/(\w+)$',configParser['$def'],re.M)
 			if matchObj:
 				return 'choices'
+		elif 'format' in configParser.keys():
+			return self['format']
+		elif 'type' in configParser.keys():
+			return self['type']
 		return ''
 		
 	def _convert(self,value):
@@ -303,6 +304,18 @@ class JSAGparser(dict):
 			if value is None or value == "":
 				return None
 			return int(value)
+		elif self.getType() == 'date-time':
+			if value is None or value == "":
+				return None
+			if isinstance(value,datetime.datetime):
+				return value.isoformat()
+			else:
+				try:
+					strdate = dateutil.parser.parse(value).isoformat()
+				except:
+					raise ValueError("unknown string format: {0}".format(value))
+				return strdate
+				
 		elif self.getType() == "object":
 			result = {}
 			for prop in self['properties'].keys():

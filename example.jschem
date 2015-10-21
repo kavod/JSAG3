@@ -89,6 +89,7 @@
 						"title":"Wedding date",
 						"description":"Wedding date",
 						"type":"string",
+						"format":"date-time",
 						"order":2
 					}
 				},

@@ -4,11 +4,13 @@ from __future__ import unicode_literals
 
 import os
 import unittest
-import JSAG
+import datetime
 import json
 from random import randint
+import tzlocal
 import tempfile
 import copy
+import JSAG
 
 class Test_JSAGdata(unittest.TestCase):
 	def setUp(self):
@@ -23,7 +25,7 @@ class Test_JSAGdata(unittest.TestCase):
 		self.value3 = [{u"firstName": u"Amélie", u"lastName": u"Poulain", u'married': False, u"sex": u"f",u"age":randint(0,150)}]
 		
 		# Insert data in file
-		self.dataContent = [{"password": "donuts", "firstName": "Homer", "lastName": "Simpson", "age": 44, "married": True, "sex": "m", "spouse": {"firstName": "Marge", "weddate": "8 years ago"}, "children": ["Bart", "Lisa", "The baby"]}]
+		self.dataContent = [{"password": "donuts", "firstName": "Homer", "lastName": "Simpson", "age": 44, "married": True, "sex": "m", "spouse": {"firstName": "Marge", "weddate": "2078-05-16T12:14:05+00:00"}, "children": ["Bart", "Lisa", "The baby"]}]
 		with open(self.dataFilename, 'w') as outfile:
 			json.dump(self.dataContent, outfile,encoding='utf8')
 	
@@ -106,10 +108,11 @@ class Test_JSAGdata(unittest.TestCase):
 					f1.write(line)
 		with open(self.dataFilename) as data_file:    
 			data1 = json.load(data_file)
-		data1[0]['spouse'] = {"firstName": "Karl", "weddate": "last night, after Moe"}
+		new_wedday = datetime.datetime.now(tzlocal.get_localzone())-datetime.timedelta(hours=-12) #"last night, after Moe"
+		data1[0]['spouse'] = {"firstName": "Karl", "weddate": new_wedday.isoformat()} 
 		
 		self.data = JSAG.JSAGdata(configParser=self.parser['items']['properties']['spouse'],value=None,filename=tmpfile,path=[0,'spouse'])
-		self.data.setValue({"firstName": "Karl", "weddate": "last night, after Moe"})
+		self.data.setValue({"firstName": "Karl", "weddate": new_wedday.isoformat()})
 		self.data.save()
 		
 		with open(tmpfile) as data_file:
@@ -240,11 +243,14 @@ class Test_JSAGdata(unittest.TestCase):
 		
 	def test_setValue_object_with_path(self):
 		data = copy.deepcopy(self.dataContent)
-		data[0]['spouse'] = {"firstName": "Edna", "weddate": "just married!"}
+		data1 = copy.deepcopy(self.dataContent)
+		new_wedday = datetime.datetime.now(tzlocal.get_localzone()) #just married!
+		data[0]['spouse'] = {"firstName": "Edna", "weddate": new_wedday}
+		data1[0]['spouse'] = {"firstName": "Edna", "weddate": new_wedday.isoformat()}
 		self.test_load()
 		self.data.setValue(data[0]['spouse'],path=[0,'spouse'])
 		self.validate()
-		self.assertEqual(data,JSAG.toJSON(self.data,hidePasswords=False))
+		self.assertEqual(data1,JSAG.toJSON(self.data,hidePasswords=False))
 		
 	def test_setValue_array_with_path(self):
 		data = copy.deepcopy(self.dataContent)
