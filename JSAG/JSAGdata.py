@@ -87,7 +87,7 @@ def toJSON(configValue,hidePasswords=True):
 				result.append(toJSON(item,hidePasswords))
 		return result
 	elif isinstance(configValue,datetime.datetime):
-		configValue.value.isoformat()
+		return configValue.isoformat()
 	elif isinstance(configValue,JSAGdata) and configValue.configParser.getType() in SIMPLE_TYPES:
 		if configValue.configParser.getType() == 'password' and hidePasswords:
 			return '****'
