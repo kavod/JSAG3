@@ -315,7 +315,34 @@ class Test_JSAGdata(unittest.TestCase):
 		self.data = JSAG.JSAGdata(configParser=self.parser,value=[],filename=self.dataFilename)
 		self.assertEqual(len(self.data),0)
 	
+	def test_getitem(self):
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1,filename=self.dataFilename)
+		self.assertIsInstance(self.data[0],JSAG.JSAGdata)
+		self.assertIsInstance(self.data[0]['firstName'],JSAG.JSAGdata)
+		
+	def test_setitem_dict(self):
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1,filename=self.dataFilename)
+		self.assertEqual(len(self.data),1)
+		self.data.append(self.value3[0])
+		self.assertIsInstance(self.data,JSAG.JSAGdata)
+		self.assertEqual(len(self.data),2)
+		self.assertIsInstance(self.data[1],JSAG.JSAGdata)
+		self.validate()
 
+	def test_setitem_JSAGdata(self):
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1,filename=self.dataFilename)
+		self.data1 = JSAG.JSAGdata(configParser=self.parser['items'],value=self.value3[0],filename=self.dataFilename)
+		self.assertEqual(len(self.data),1)
+		self.data.append(self.data[0])
+		self.assertIsInstance(self.data,JSAG.JSAGdata)
+		self.assertEqual(self.data[1]['lastName'].getValue(),'Scully')
+		self.assertEqual(len(self.data),2)
+		self.data[1] = self.data1
+		self.assertIsInstance(self.data[0],JSAG.JSAGdata)
+		self.assertIsInstance(self.data[1],JSAG.JSAGdata)
+		self.assertEqual(self.data[1]['lastName'].getValue(),'Poulain')
+		self.validate()
+		
 	"""# Interactive methods
 	def test_cliCreate(self):
 		self.test_load()

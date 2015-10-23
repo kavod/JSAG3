@@ -236,6 +236,26 @@ class JSAGdata(object):
 			return self.value[key]
 		else:
 			raise TypeError("value is not object nor list")
+			
+	def __setitem__(self,key,value):
+		if self.value is None:
+			raise IndexError
+		if self.configParser.getType() == 'object':
+			if key not in self.value.keys():
+				raise IndexError
+		elif self.configParser.getType() == 'array':
+			if key >= len(self.value):
+				raise IndexError
+		else:
+			raise TypeError("value is not object nor list")
+			
+		tempSelf = copy.deepcopy(self)
+		if isinstance(value,JSAGdata):
+			tempSelf.value[key].setValue(toJSON(value))
+		else:
+			tempSelf.value[key].setValue(value)
+		tempSelf.configParser.validate(toJSON(tempSelf))
+		self.value = tempSelf.value
 	
 	def __str__(self):
 		if self.configParser.getType() == 'object':
@@ -355,7 +375,11 @@ class JSAGdata(object):
 		tempData = toJSON(self.value,hidePasswords=False)
 		if tempData is None:
 			tempData = []
-		tempData.insert(i,copy.deepcopy(x))
+			
+		y = copy.deepcopy(x)
+		if isinstance(y,JSAGdata):
+			y = toJSON(y)
+		tempData.insert(i,y)
 		self.configParser.validate(tempData)
 		
 		if self.value is None:
@@ -363,7 +387,7 @@ class JSAGdata(object):
 		self.value.insert(i,JSAGdata(
 								self.configParser['items'],
 								self.configParser['items']._convert(
-									copy.deepcopy(x))))
+									y)))
 		self.configParser.validate(self.getValue())
 		
 	def append(self,x):
