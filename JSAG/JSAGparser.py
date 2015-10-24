@@ -298,25 +298,27 @@ class JSAGparser(dict):
 		if (value is None or value == "") and 'default' in self.keys():
 			return self['default']
 			
-		if value is None or value == "":
+		if value is None: # or value == "":
 			return None
 		elif self.getType() == "integer":
-			if value is None or value == "":
-				return None
+			"""if value is None: or value == "":
+				return None"""
 			return int(value)
 		elif self.getType() == 'date-time':
-			if value is None or value == "":
-				return None
+			"""if value is None or value == "":
+				return None"""
 			if isinstance(value,datetime.datetime):
-				return value.isoformat()
+				return unicode(value.isoformat())
 			else:
 				try:
 					strdate = dateutil.parser.parse(value).isoformat()
 				except:
 					raise ValueError("unknown string format: {0}".format(value))
-				return strdate
+				return unicode(strdate)
 				
 		elif self.getType() == "object":
+			if not isinstance(value,dict):
+				raise TypeError("Dict instance expected, {0} received instead".format(type(value)))
 			result = {}
 			for prop in self['properties'].keys():
 				if prop not in value.keys():
@@ -328,8 +330,8 @@ class JSAGparser(dict):
 						result[prop] = element
 				else:
 					raise("Unknown key: " + unicode(prop))
-			if result == {}:
-				return None
+			"""if result == {}:
+				return None"""
 			return result
 		elif self.getType() == "array":
 			result = []
@@ -337,7 +339,7 @@ class JSAGparser(dict):
 				element = self['items']._convert(prop)
 				if element is not None:
 					result.append(element)
-			if len(result)==0:
-				return None
+			"""if len(result)==0:
+				return None"""
 			return result
 		return value

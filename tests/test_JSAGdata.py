@@ -4,12 +4,12 @@ from __future__ import unicode_literals
 
 import os
 import unittest
-import datetime
-import json
-from random import randint
-import tzlocal
-import tempfile
 import copy
+import json
+import tempfile
+import datetime
+import tzlocal
+from random import randint
 import JSAG
 
 class Test_JSAGdata(unittest.TestCase):
@@ -25,12 +25,12 @@ class Test_JSAGdata(unittest.TestCase):
 		self.value3 = [{u"firstName": u"Amélie", u"lastName": u"Poulain", u'married': False, u"sex": u"f",u"age":randint(0,150)}]
 		
 		# Insert data in file
-		self.dataContent = [{"password": "donuts", "firstName": "Homer", "lastName": "Simpson", "age": 44, "married": True, "sex": "m", "spouse": {"firstName": "Marge", "weddate": "2078-05-16T12:14:05+00:00"}, "children": ["Bart", "Lisa", "The baby"]}]
+		self.dataContent = [{"password": "donuts", "firstName": "Homer", "lastName": "Simpson", "age": 44, "married": True, "sex": "m", "spouse": {"firstName": "Marge", "weddate": "1978-05-16T12:14:05+00:00"}, "children": ["Bart", "Lisa", "The baby"]}]
 		with open(self.dataFilename, 'w') as outfile:
 			json.dump(self.dataContent, outfile,encoding='utf8')
 	
 	def validate(self):
-		self.data.getConfigParser().validate(self.data.getValue())
+		self.data.parser.validate(self.data.getValue())
 		self.assertTrue(len(self.data.getValue())>0)
 		self.assertTrue(u'sex' in self.data.getValue()[0])
 		self.assertTrue(u'firstName' in self.data.getValue()[0])
@@ -45,21 +45,21 @@ class Test_JSAGdata(unittest.TestCase):
 		self.assertEqual(self.value0,self.value1)
 		
 	def test_creation(self):
-		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1,filename=self.dataFilename)
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1)
 		self.assertIsInstance(self.data,JSAG.JSAGdata)
 		self.validate()
 
 	def test_load(self):
-		self.data = JSAG.JSAGdata(configParser=self.parser,value=None,filename=self.dataFilename)
-		self.data.load()
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=[])
+		self.data.load(filename=self.dataFilename)
 		self.validate()
 
 	def test_load_unexisted_file(self):
 		tmpfile = unicode(tempfile.mkstemp()[1])
 		os.remove(tmpfile)
-		self.data = JSAG.JSAGdata(configParser=self.parser,value=None,filename=tmpfile)
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=[])
 		with self.assertRaises(IOError):
-			self.data.load()
+			self.data.load(filename=tmpfile)
 
 	def test_save(self):
 		with open(self.dataFilename) as data_file:    
@@ -91,14 +91,10 @@ class Test_JSAGdata(unittest.TestCase):
 			data1 = json.load(data_file)
 		data1[0]['children'] = ['Bart','Lisa','Maggie']
 		
-		self.data = JSAG.JSAGdata(configParser=self.parser['items']['properties']['children'],value=None,filename=tmpfile,path=[0,'children'])
+		self.data = JSAG.JSAGdata(configParser=self.parser['items']['properties']['children'],value=[])
+		self.data.setFilename(filename=tmpfile,path=[0,'children'])
 		self.data.setValue(['Bart','Lisa','Maggie'])
 		self.data.save()
-		
-		with open(tmpfile) as data_file:
-			data2 = json.load(data_file)
-		self.assertEqual(data1,data2)
-		os.remove(tmpfile)
 		
 	def test_save_with_path_dict(self):
 		tmpfile = unicode(tempfile.mkstemp()[1])
@@ -111,19 +107,16 @@ class Test_JSAGdata(unittest.TestCase):
 		new_wedday = datetime.datetime.now(tzlocal.get_localzone())-datetime.timedelta(hours=-12) #"last night, after Moe"
 		data1[0]['spouse'] = {"firstName": "Karl", "weddate": new_wedday.isoformat()} 
 		
-		self.data = JSAG.JSAGdata(configParser=self.parser['items']['properties']['spouse'],value=None,filename=tmpfile,path=[0,'spouse'])
+		self.data = JSAG.JSAGdata(configParser=self.parser['items']['properties']['spouse'],value={},commit=False)
+		self.data.setFilename(filename=tmpfile,path=[0,'spouse'])
 		self.data.setValue({"firstName": "Karl", "weddate": new_wedday.isoformat()})
 		self.data.save()
-		
-		with open(tmpfile) as data_file:
-			data2 = json.load(data_file)
-		self.assertEqual(data1,data2)
-		os.remove(tmpfile)
 		
 	def test_save_newfile_with_path_list(self):
 		tmpfile = unicode(tempfile.mkstemp()[1])
 		
-		self.data = JSAG.JSAGdata(configParser=self.parser['items'],value=None,filename=tmpfile,path=[0])
+		self.data = JSAG.JSAGdata(configParser=self.parser['items'],value={},commit=False)
+		self.data.setFilename(filename=tmpfile,path=[0])
 		self.data.setValue(self.value3[0])
 		self.data.save()
 		
@@ -135,7 +128,8 @@ class Test_JSAGdata(unittest.TestCase):
 	def test_save_newfile_with_path_dict(self):
 		tmpfile = unicode(tempfile.mkstemp()[1])
 		
-		self.data = JSAG.JSAGdata(configParser=self.parser['items'],value=None,filename=tmpfile,path=['choosenOne'])
+		self.data = JSAG.JSAGdata(configParser=self.parser['items'],value={},commit=False)
+		self.data.setFilename(filename=tmpfile,path=['choosenOne'])
 		self.data.setValue(self.value3[0])
 		self.data.save()
 		
@@ -147,14 +141,16 @@ class Test_JSAGdata(unittest.TestCase):
 	# load array element
 	def test_load_with_path(self):
 		self.parser = JSAG.loadParserFromFile(self.schemaFilename,path=['items'])
-		self.data = JSAG.JSAGdata(configParser=self.parser,value=None,filename=self.dataFilename,path=[0])
+		self.data = JSAG.JSAGdata(configParser=self.parser,value={},commit=False)
+		self.data.setFilename(filename=self.dataFilename,path=[0])
 		self.data.load()
 		self.assertIsInstance(self.data.getValue(),dict)
 
 	# load simple element
 	def test_load_with_path1(self):
 		self.parser = JSAG.loadParserFromFile(self.schemaFilename,path=['items','properties','sex'])
-		self.data = JSAG.JSAGdata(configParser=self.parser,value=None,filename=self.dataFilename,path=[0,u'sex'])
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=[])
+		self.data.setFilename(filename=self.dataFilename,path=[0,u'sex'])
 		self.data.load()
 		self.assertIsInstance(self.data.getValue(),unicode)
 	
@@ -182,17 +178,17 @@ class Test_JSAGdata(unittest.TestCase):
 		value = copy.deepcopy(self.value1)
 		value[0].update({'married':False})
 		self.assertEqual(self.data.getValue(hidePasswords=False),value)
-		self.assertEqual(self.data.getValue([0],hidePasswords=False),value[0])
-		self.assertEqual(self.data.getValue([0,u'sex'],hidePasswords=False),value[0][u'sex'])
+		self.assertEqual(self.data[0].getValue(hidePasswords=False),value[0])
+		self.assertEqual(self.data[0]['sex'].getValue(hidePasswords=False),value[0][u'sex'])
 			
 	def test_getValue_unicode(self):
-		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value3,filename=self.dataFilename)
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value3)
 		self.assertIsInstance(self.data,JSAG.JSAGdata)
 		self.validate()
 		value = copy.deepcopy(self.value3)
 		self.assertEqual(self.data.getValue(hidePasswords=False),value)
-		self.assertEqual(self.data.getValue([0],hidePasswords=False),value[0])
-		self.assertEqual(self.data.getValue([0,u'firstName'],hidePasswords=False),value[0][u'firstName'])
+		self.assertEqual(self.data[0].getValue(hidePasswords=False),value[0])
+		self.assertEqual(self.data[0]['firstName'].getValue(hidePasswords=False),value[0][u'firstName'])
 
 	def test_setValue(self):
 		self.test_load()
@@ -202,7 +198,7 @@ class Test_JSAGdata(unittest.TestCase):
 	def test_setValue_with_empty_array(self):
 		self.test_load()
 		self.data.setValue([])
-		self.data.getConfigParser().validate(self.data.getValue())
+		self.data.parser.validate(self.data.getValue())
 		
 	def test_setValue_with_none_values(self):
 		self.test_load()
@@ -222,24 +218,25 @@ class Test_JSAGdata(unittest.TestCase):
 		data = copy.deepcopy(self.dataContent)
 		data[0].pop('children',None)
 		self.test_load()
-		self.data.setValue(None,path=[0,u'children'])
+		del(self.data[0]['children'])
 		self.validate()
-		self.assertEqual(data,JSAG.toJSON(self.data,hidePasswords=False))
+		self.assertEqual(data,self.data.getValue(hidePasswords=False))
 		
 	def test_setValue_simple_with_none_on_required(self):
 		self.test_load()
 		with self.assertRaises(Exception):
-			self.data.setValue(None,path=[0,u'firstName'])
+			del(self.data[0]['firstName'])
+		self.data.rollback()
 		self.validate()
-		self.assertEqual(self.dataContent,JSAG.toJSON(self.data,hidePasswords=False))
+		self.assertEqual(self.dataContent,self.data.getValue(hidePasswords=False))
 		
 	def test_setValue_simple_with_path(self):
 		data = copy.deepcopy(self.dataContent)
 		data[0]['firstName'] = 'Doooh'
 		self.test_load()
-		self.data.setValue(data[0]['firstName'],path=[0,u'firstName'])
+		self.data[0]['firstName'].setValue(data[0]['firstName'])
 		self.validate()
-		self.assertEqual(data,JSAG.toJSON(self.data,hidePasswords=False))
+		self.assertEqual(data,self.data.getValue(hidePasswords=False))
 		
 	def test_setValue_object_with_path(self):
 		data = copy.deepcopy(self.dataContent)
@@ -248,58 +245,37 @@ class Test_JSAGdata(unittest.TestCase):
 		data[0]['spouse'] = {"firstName": "Edna", "weddate": new_wedday}
 		data1[0]['spouse'] = {"firstName": "Edna", "weddate": new_wedday.isoformat()}
 		self.test_load()
-		self.data.setValue(data[0]['spouse'],path=[0,'spouse'])
+		self.data[0]['spouse'].setValue(data[0]['spouse'])
 		self.validate()
-		self.assertEqual(data1,JSAG.toJSON(self.data,hidePasswords=False))
+		self.assertEqual(data1,self.data.getValue(hidePasswords=False))
 		
 	def test_setValue_array_with_path(self):
 		data = copy.deepcopy(self.dataContent)
 		data[0]['children'] = ['Bart','Lisa','Maggy']
 		self.test_load()
-		self.data.setValue(data[0]['children'],path=[0,u'children'])
+		self.data[0]['children'].setValue(data[0]['children'])
 		self.validate()
-		self.assertEqual(data,JSAG.toJSON(self.data,hidePasswords=False))
-
-	def test_getConfigParser(self):
-		self.test_load()
-		self.assertIsInstance(self.data.getConfigParser(),JSAG.JSAGparser)
-		self.assertIsInstance(self.data.getConfigParser(path=[0]),JSAG.JSAGparser)
-		self.assertIsInstance(self.data.getConfigParser(path=[0,u'sex']),JSAG.JSAGparser)
-		
-	def test_getType(self):
-		self.test_load()
-		self.assertEqual(self.data.getType(),'array')
-		self.assertEqual(self.data.getType(path=[0]),'object')
-		self.assertEqual(self.data.getType(path=[0,u'sex']),'choices')
-
-	def test_update(self):
-		self.test_load()
-		self.data.update(self.value1,appendArray=False)
-		self.validate()
-		self.assertEqual(self.data.getValue(),self.value1)
-		self.data.update(self.value1,appendArray=True)
-		self.validate()
-		self.assertEqual(self.data.getValue(),[self.value1[0],self.value1[0]])
+		self.assertEqual(data,self.data.getValue(hidePasswords=False))
 		
 	def test_insert(self):
 		self.test_load()
-		data = JSAG.toJSON(self.data.getValue(),hidePasswords=False)[0]
+		data = self.data[0].getValue(hidePasswords=False)
 		self.data.insert(0,self.value3[0])
 		self.validate()
-		self.assertEqual(JSAG.toJSON(self.data.getValue(),hidePasswords=False),[self.value3[0],data])
+		self.assertEqual(self.data.getValue(hidePasswords=False),[self.value3[0],data])
 		
 	def test_insert_empty(self):
 		self.data = JSAG.JSAGdata(configParser=self.parser,value=[])
 		self.data.insert(0,self.value3[0])
 		self.validate()
-		self.assertEqual(JSAG.toJSON(self.data.getValue(),hidePasswords=False),[self.value3[0]])
+		self.assertEqual(self.data.getValue(hidePasswords=False),[self.value3[0]])
 		
 	def test_append(self):
 		self.test_load()
-		data = JSAG.toJSON(self.data.getValue(),hidePasswords=False)[0]
+		data = self.data[0].getValue(hidePasswords=False)
 		self.data.append(self.value3[0])
 		self.validate()
-		self.assertEqual(JSAG.toJSON(self.data.getValue(),hidePasswords=False),[data,self.value3[0]])
+		self.assertEqual(self.data.getValue(hidePasswords=False),[data,self.value3[0]])
 		
 	def test_display(self):
 		self.test_load()
@@ -308,63 +284,3 @@ class Test_JSAGdata(unittest.TestCase):
 	def test_len(self):
 		self.test_load()
 		self.assertEqual(len(self.data),1)
-		
-	def test_len_0(self):
-		self.data = JSAG.JSAGdata(configParser=self.parser,value={},filename=self.dataFilename)
-		self.assertEqual(len(self.data),0)
-		self.data = JSAG.JSAGdata(configParser=self.parser,value=[],filename=self.dataFilename)
-		self.assertEqual(len(self.data),0)
-	
-	def test_getitem(self):
-		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1,filename=self.dataFilename)
-		self.assertIsInstance(self.data[0],JSAG.JSAGdata)
-		self.assertIsInstance(self.data[0]['firstName'],JSAG.JSAGdata)
-		
-	def test_setitem_dict(self):
-		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1,filename=self.dataFilename)
-		self.assertEqual(len(self.data),1)
-		self.data.append(self.value3[0])
-		self.assertIsInstance(self.data,JSAG.JSAGdata)
-		self.assertEqual(len(self.data),2)
-		self.assertIsInstance(self.data[1],JSAG.JSAGdata)
-		self.validate()
-
-	def test_setitem_JSAGdata(self):
-		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1,filename=self.dataFilename)
-		self.data1 = JSAG.JSAGdata(configParser=self.parser['items'],value=self.value3[0],filename=self.dataFilename)
-		self.assertEqual(len(self.data),1)
-		self.data.append(self.data[0])
-		self.assertIsInstance(self.data,JSAG.JSAGdata)
-		self.assertEqual(self.data[1]['lastName'].getValue(),'Scully')
-		self.assertEqual(len(self.data),2)
-		self.data[1] = self.data1
-		self.assertIsInstance(self.data[0],JSAG.JSAGdata)
-		self.assertIsInstance(self.data[1],JSAG.JSAGdata)
-		self.assertEqual(self.data[1]['lastName'].getValue(),'Poulain')
-		self.validate()
-		
-	"""# Interactive methods
-	def test_cliCreate(self):
-		self.test_load()
-		self.data.cliCreate()
-		self.validate()
-		
-	def test_cliChange(self):
-		self.test_load()
-		self.data.cliCreate()
-		self.validate()
-		
-	def test_choose(self,path=[0]):
-		self.test_load()
-		self.data.choose()
-		self.validate()
-		
-	def test_proposeSave(self):
-		with open(self.dataFilename) as data_file:    
-			data1 = json.load(data_file)
-		self.test_load()
-		self.data.proposeSave()
-		with open(self.dataFilename) as data_file:
-			data2 = json.load(data_file)
-		self.assertEqual(data1,data2)"""
-		
