@@ -277,10 +277,6 @@ class Test_JSAGdata(unittest.TestCase):
 		self.validate()
 		self.assertEqual(self.data.getValue(hidePasswords=False),[data,self.value3[0]])
 		
-	def test_display(self):
-		self.test_load()
-		self.data.display()
-		
 	def test_len(self):
 		self.test_load()
 		self.assertEqual(len(self.data),1)
