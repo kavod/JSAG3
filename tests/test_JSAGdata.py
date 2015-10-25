@@ -277,6 +277,64 @@ class Test_JSAGdata(unittest.TestCase):
 		self.validate()
 		self.assertEqual(self.data.getValue(hidePasswords=False),[data,self.value3[0]])
 		
+	def test_display(self):
+		self.test_load()
+		self.data.display()
+		
 	def test_len(self):
 		self.test_load()
 		self.assertEqual(len(self.data),1)
+		
+	def test_len_0(self):
+		self.data = JSAG.JSAGdata(configParser=self.parser,value={})
+		self.assertEqual(len(self.data),0)
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=[])
+		self.assertEqual(len(self.data),0)
+	
+	def test_getitem(self):
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1)
+		self.assertIsInstance(self.data[0],JSAG.JSAGdata)
+		self.assertIsInstance(self.data[0]['firstName'],JSAG.JSAGdata)
+		
+	def test_setitem_dict(self):
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1)
+		self.assertEqual(len(self.data),1)
+		self.data.append(self.value3[0])
+		self.assertIsInstance(self.data,JSAG.JSAGdata)
+		self.assertEqual(len(self.data),2)
+		self.assertIsInstance(self.data[1],JSAG.JSAGdata)
+		self.validate()
+
+	def test_setitem_JSAGdata(self):
+		self.data = JSAG.JSAGdata(configParser=self.parser,value=self.value1)
+		self.data1 = JSAG.JSAGdata(configParser=self.parser['items'],value=self.value3[0])
+		self.assertEqual(len(self.data),1)
+		self.data.append(self.data[0])
+		self.assertIsInstance(self.data,JSAG.JSAGdata)
+		self.assertEqual(self.data[1]['lastName'].getValue(),'Scully')
+		self.assertEqual(len(self.data),2)
+		self.data[1] = self.data1
+		self.assertIsInstance(self.data[0],JSAG.JSAGdata)
+		self.assertIsInstance(self.data[1],JSAG.JSAGdata)
+		self.assertEqual(self.data[1]['lastName'].getValue(),'Poulain')
+		self.validate()
+		
+	# Interactive methods
+	def test_cliCreate(self):
+		self.test_load()
+		self.data.cliCreate()
+		self.validate()
+		
+	def test_cliChange(self):
+		self.test_load()
+		self.data.cliCreate()
+		self.validate()
+		
+	def test_proposeSave(self):
+		with open(self.dataFilename) as data_file:    
+			data1 = json.load(data_file)
+		self.test_load()
+		self.data.proposeSave()
+		with open(self.dataFilename) as data_file:
+			data2 = json.load(data_file)
+		self.assertEqual(data1,data2)

@@ -41,7 +41,7 @@ class Test_JSAGparser(unittest.TestCase):
 			data = json.load(data_file)
 		parser.display(data)
 
-	def test_display(self):
+	def test_getType(self):
 		parser = JSAG.loadParserFromFile(self.schemaFilename)
 		with open(self.dataFilename) as data_file:    
 			data = json.load(data_file)

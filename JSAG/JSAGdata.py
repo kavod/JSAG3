@@ -6,6 +6,24 @@ import datetime
 from codecs import open
 from JSAGparser import *
 
+class color:
+   PURPLE = '\033[95m'
+   WHITE = '\033[97m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
+
+class pattern:
+	DICT = '{0}' + color.BOLD + color.RED + '{1}:' + color.END
+	LIST = '{0}' + color.BOLD + color.GREEN + '{1}:' + color.END
+	SIMPLE = '{0}' + color.BOLD + color.WHITE + '{1}:' + color.END
+
 def fusion(initial,path,data):
 	if len(path)==0:
 		initial = data
@@ -29,6 +47,30 @@ def fusion(initial,path,data):
 				raise Exception("unexpected case")
 	return initial
 
+def getWidth(myList,maxLevel=-1,ident=0):
+	width = 0
+	for item in myList:
+		if isinstance(item,list):
+			width = max(width,getWidth(item,maxLevel=maxLevel-1,ident=ident+1))
+		else:
+			width = max(width,len(item['label'])+ident)
+	return width
+	
+def printList(myList,ident="",width=0):
+	for item in myList:
+		if isinstance(item,list):
+			printList(item,ident=" " + ident,width=width)
+		else:
+			try:
+				label = item['pattern'].format(ident,item['label'],item['value'])
+				if isinstance(item['value'],unicode):
+					item['value'] = item['value'].encode('utf8')
+				print ('{0:' + unicode(max(width,0)+15) + '}{1}').format(label,unicode(item['value']))
+			except:
+				print "ERROR"
+				print myList
+				sys.exit()
+				
 class JSAGdata(object):
 	def __init__(self,configParser=None,value=None,commit=True):
 		
@@ -59,11 +101,11 @@ class JSAGdata(object):
 			raise IndexError
 		if self.parser.getType() == 'object':
 			if key not in self.data.keys():
-				raise IndexError
+				raise IndexError("key not found")
 			return self.data[key]
 		elif self.parser.getType() == 'array':
 			if key >= len(self.data):
-				raise IndexError
+				raise IndexError("array is not long enough")
 			return self.data[key]
 		else:
 			raise TypeError("value is not object nor list")
@@ -129,6 +171,8 @@ class JSAGdata(object):
 	
 	def setValue(self,src_value,commit=True):
 		value = copy.deepcopy(src_value)
+		if isinstance(value,JSAGdata):
+			value = value.getValue()
 		value = self.parser._convert(value)
 		
 		if self.parser.getType() in SIMPLE_TYPES:
@@ -241,3 +285,85 @@ class JSAGdata(object):
 				json.dump(existingData, outfile,encoding='utf8') #self.value
 		except:
 			raise Exception("Unable to write file {0}".format(unicode(self.filename)))
+
+	def display(self,maxLevel=-1,cleanScreen=True):
+		lines = self.displayConf(maxLevel=maxLevel)
+		width = getWidth(lines)
+		if cleanScreen:
+			print(chr(27) + "[2J")
+		printList(lines,ident='',width=width)
+		
+	def displayConf(self,maxLevel=-1,key=''):
+		lines = []
+		value = self.getValue()
+		if self.parser.getType() == 'object':
+			if value is None:
+				val = "Not managed"
+			else:
+				if maxLevel != 0:
+					val = ''
+				else:
+					val = "Managed"
+			lines.append({'pattern':pattern.DICT,"label":self.parser['title']+key,"value":val})
+			if maxLevel !=0 and value is not None:
+				lines.append([])
+				for item in sorted(self.parser['properties'].iteritems(),key=lambda k:k[1]['order'] if 'order' in k[1].keys() else 0):
+					if item[0] in self.keys():
+						lines[1] +=self[item[0]].displayConf(maxLevel=maxLevel-1)
+		# array
+		elif self.parser.getType() == 'array':
+			if value is None or len(value)<1:
+				val = "0 managed"
+			else:
+				if maxLevel != 0:
+					val = ''
+				else:
+					val = unicode(len(value)) + " managed"
+			label = "List of " + self.parser['title']
+			lines.append({'pattern':pattern.LIST,"label":label,"value":val})
+			if value is not None and maxLevel != 0:
+				lines.append(self.displayList(maxLevel=maxLevel-1))
+				
+
+		# Simple
+		else:
+			val = value if value is not None else "None"
+			lines.append({'pattern':pattern.SIMPLE,"label":self.parser['title'],"value":val})
+		return lines
+			
+	def displayList(self,maxLevel=-1):
+		lines = []
+		value = self.getValue()
+		for key,item in enumerate(value):
+			if self.parser['items'].getType() == 'object':
+				lines+=self[key].displayConf(maxLevel=maxLevel,key=' '+unicode(key+1))
+			elif self.parser['items'].getType() == 'array':
+				lines.append({'pattern':pattern.LIST,"label":self.parser['title']+' '+unicode(key+1),"value":''})
+			else:
+				value = unicode(item)
+				lines.append({'pattern':pattern.SIMPLE,"label":self.parser['title']+' '+unicode(key+1),"value":value})
+		return lines
+			
+	def cliCreate(self):
+		newConf = self.parser.cliCreate()
+		self.setValue(newConf)
+		
+	def cliChange(self):
+		newConf = self.parser.cliChange(self.getValue(path=[],hidePasswords=True))
+		self.setValue(newConf)
+		
+	def proposeSave(self,display=True,filename=None,path=[]):
+		if filename is not None:
+			self.setFilename(filename,path)
+		if display:
+			self.display()
+		if self.filename is not None:
+			if Prompt.promptYN("Save in file {0}?".format(self.filename),default='N',cleanScreen=False):
+				self.save(path=path)
+				print "Saved!"
+				return True
+			else:
+				print "Not saved!"
+				return False
+		else:
+			raise Exception("No filename specified")
