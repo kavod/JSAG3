@@ -320,7 +320,7 @@ class Test_JSAGdata(unittest.TestCase):
 		self.validate()
 		
 	# Interactive methods
-	def test_cliCreate(self):
+	"""def test_cliCreate(self):
 		self.test_load()
 		self.data.cliCreate()
 		self.validate()
@@ -337,4 +337,4 @@ class Test_JSAGdata(unittest.TestCase):
 		self.data.proposeSave()
 		with open(self.dataFilename) as data_file:
 			data2 = json.load(data_file)
-		self.assertEqual(data1,data2)
+		self.assertEqual(data1,data2)"""
