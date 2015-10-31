@@ -8,11 +8,11 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir) 
 
 import mock
-import JSAG.JSAGcli
+import JSAG.Prompt2
 
 pattern = '''
-	@mock.patch("JSAG.JSAGcli.raw_input",create=True,side_effect={0})
-	@mock.patch("JSAG.JSAGcli.print",create=True)
+	@mock.patch("JSAG.Prompt2.raw_input",create=True,side_effect={0})
+	@mock.patch("JSAG.Prompt2.print",create=True)
 	def test_{1}(self,myMockPrint,mock_input):
 		expected = load_expected('{1}')
 		reponse = {2}
@@ -21,8 +21,8 @@ pattern = '''
 			self.assertEqual(myMockPrint.mock_calls[key],line)
 		self.assertEqual(len(expected),len(myMockPrint.mock_calls))'''
 
-@mock.patch("JSAG.JSAGcli.raw_input",create=True)
-@mock.patch("JSAG.JSAGcli.print",create=True)
+@mock.patch("JSAG.Prompt2.raw_input",create=True)
+@mock.patch("JSAG.Prompt2.print",create=True)
 def create(title,cmd,side_effect,myMockPrint,mock_input):
 	mock_input.side_effect = side_effect
 	reponse = eval(cmd)
@@ -34,8 +34,8 @@ def create(title,cmd,side_effect,myMockPrint,mock_input):
 	text_file.close()
 	print pattern.format(unicode(side_effect),title,cmd,reponse)
 	
-@mock.patch("JSAG.JSAGcli.raw_input",create=True)
-@mock.patch("JSAG.JSAGcli.print",create=True)
+@mock.patch("JSAG.Prompt2.raw_input",create=True)
+@mock.patch("JSAG.Prompt2.print",create=True)
 def dry_test(title,cmd,side_effect,myMockPrint,mock_input):
 	mock_input.side_effect = side_effect
 	reponse = eval(cmd)
@@ -68,4 +68,3 @@ if __name__ == '__main__':
 	reponse = raw_input('')
 	if reponse == 'OK':
 		create(title,cmd,side_effect)
-	#create('niouf1',"JSAG.JSAGcli.prompt('Optinal question',default='')",['','1','2'])

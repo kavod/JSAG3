@@ -4,4 +4,4 @@ __all__ = ['JSAGparser','JSAGdata','loadParserFromFile']
 from JSAGparser import JSAGparser
 from JSAGdata import JSAGdata
 from JSAGparser import loadParserFromFile
-from JSAGcli import prompt, promptYN, promptInt, promptChoices
+from Prompt2 import prompt, promptYN, promptInt, promptChoices
