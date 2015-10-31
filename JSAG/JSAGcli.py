@@ -135,6 +135,6 @@ def myInput():
 	
 def rollback():
 	global NB_LINES
-	print(((char.CURSOR_UP_ONE + char.ERASE_LINE)*(NB_LINES)),end='')
+	print(((char.CURSOR_UP_ONE + char.ERASE_LINE)*(NB_LINES))+char.CURSOR_UP_ONE)
 	commit()
 	
