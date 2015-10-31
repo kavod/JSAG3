@@ -129,10 +129,12 @@ def print_line(text):
 	NB_LINES += 1
 	
 def myInput():
+	global NB_LINES
+	NB_LINES += 1
 	return raw_input(CHAR_PROMPT)
 	
 def rollback():
 	global NB_LINES
-	print(((char.CURSOR_UP_ONE + char.ERASE_LINE)*(NB_LINES+1)),end='')
+	print(((char.CURSOR_UP_ONE + char.ERASE_LINE)*(NB_LINES)),end='')
 	commit()
 	
