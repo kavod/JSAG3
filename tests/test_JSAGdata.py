@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 #encoding:utf-8
 from __future__ import unicode_literals
+from __future__ import print_function
 
 import os
 import unittest
+import __builtin__
+import mock
 import copy
 import json
 import tempfile
@@ -11,6 +14,12 @@ import datetime
 import tzlocal
 from random import randint
 import JSAG
+
+directory = os.path.dirname(os.path.realpath(__file__))
+def load_expected(filename):
+	with open (directory + "/expected_" + filename + ".txt", "r") as myfile:
+		data=myfile.readlines()
+	return [mock.call(line.replace('\n','')) for line in data]
 
 class Test_JSAGdata(unittest.TestCase):
 	def setUp(self):
@@ -318,6 +327,19 @@ class Test_JSAGdata(unittest.TestCase):
 		self.assertIsInstance(self.data[1],JSAG.JSAGdata)
 		self.assertEqual(self.data[1]['lastName'].getValue(),'Poulain')
 		self.validate()
+		
+	@mock.patch("__builtin__.raw_input",create=True,side_effect=[])
+	@mock.patch("__builtin__.print",create=True)
+	def test_display2(self,myMockPrint,mock_input):
+		expected = load_expected('display2')
+		parser = JSAG.loadParserFromFile(os.path.dirname(os.path.abspath(__file__))+ '/../example.jschem')
+		data = JSAG.JSAGdata(configParser=parser,value=[{u"firstName": u"Dana",u"lastName": u"Scully", u"sex": u"f",u"age":40}])
+		data.load(os.path.dirname(os.path.abspath(__file__))+'/../example.json')
+		reponse = data.display2()
+		self.assertEqual(reponse,None)
+		for key,line in enumerate(expected):
+			self.assertEqual(myMockPrint.mock_calls[key],line)
+		self.assertEqual(len(expected),len(myMockPrint.mock_calls))
 		
 	# Interactive methods
 	"""def test_cliCreate(self):

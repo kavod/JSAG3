@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 #encoding:utf-8
 from __future__ import unicode_literals
+from __future__ import print_function
 
+import os
 import datetime
+import copy
+import json
 from codecs import open
-from JSAGparser import *
+import JSAGparser
+import Prompt2
 
 class color:
    PURPLE = '\033[95m'
@@ -65,11 +70,19 @@ def printList(myList,ident="",width=0):
 				label = item['pattern'].format(ident,item['label'],item['value'])
 				if isinstance(item['value'],unicode):
 					item['value'] = item['value'].encode('utf8')
-				print ('{0:' + unicode(max(width,0)+15) + '}{1}').format(label,unicode(item['value']))
+				print(('{0:' + unicode(max(width,0)+15) + '}{1}').format(label,unicode(item['value'])))
 			except:
-				print "ERROR"
-				print myList
+				print("ERROR")
+				print(myList)
 				sys.exit()
+
+def cmpObject(x,y):
+	if 'order' not in y.keys():
+		return 1
+	elif 'order' not in x.keys():
+		return -1
+	else:
+		return y['order']-x['order']
 				
 class JSAGdata(object):
 	def __init__(self,configParser=None,value=None,commit=True):
@@ -81,10 +94,10 @@ class JSAGdata(object):
 		self.path = []
 		self.commitedData = None
 	
-		if isinstance(configParser,JSAGparser):
+		if isinstance(configParser,JSAGparser.JSAGparser):
 			self.parser = configParser
 		elif isinstance(configParser,dict):
-			self.parser = JSAGparser(configParser)
+			self.parser = JSAGparser.JSAGparser(configParser)
 		else:
 			raise TypeError("configParser argument is mandatory and must be a JSAGparser instance")
 
@@ -175,7 +188,7 @@ class JSAGdata(object):
 			value = value.getValue()
 		value = self.parser._convert(value)
 		
-		if self.parser.getType() in SIMPLE_TYPES:
+		if self.parser.getType() in JSAGparser.SIMPLE_TYPES:
 			self.data = value
 		elif self.parser.getType() == 'object':
 			if value is None:
@@ -203,7 +216,7 @@ class JSAGdata(object):
 			if self.data is None:
 				return None
 			return '****'
-		if self.parser.getType() in SIMPLE_TYPES:
+		if self.parser.getType() in JSAGparser.SIMPLE_TYPES:
 			return self.data
 		elif self.parser.getType() == 'object':
 			result = {}
@@ -360,10 +373,44 @@ class JSAGdata(object):
 		if self.filename is not None:
 			if Prompt.promptYN("Save in file {0}?".format(self.filename),default='N',cleanScreen=False):
 				self.save(path=path)
-				print "Saved!"
+				print("Saved!")
 				return True
 			else:
-				print "Not saved!"
+				print("Not saved!")
 				return False
 		else:
 			raise Exception("No filename specified")
+	
+	"""
+		return: (label,value,level,type)
+			label: text on the left
+			value: text on the right
+			level: hierachy level
+			type: 0=>simple, 1=>object title, 2=>array title
+	"""
+	def prepareDisplay(self,level=0,key=''):
+		result = []
+		if self.parser.getType() == 'object':
+			result.append((self.parser['title']+ ' ' + unicode(key),'',level,1))
+			for key,value in sorted(self.parser['properties'].iteritems(),key=lambda (k,v):v['order']):
+				if key in self.keys():
+					result += self[key].prepareDisplay(level=level+1)
+		elif self.parser.getType() == 'array':
+			result.append((self.parser['title']+ ' ' + unicode(key),'',level,2))
+			for key,item in enumerate(self):
+				result+=self[key].prepareDisplay(level=level+1,key=key+1)
+		elif self.parser.getType() in JSAGparser.SIMPLE_TYPES:
+			result.append((self.parser['title']+ ' ' + unicode(key),unicode(self.getValue()),level,0))
+		return result
+		
+	def display2(self):
+		lines = self.prepareDisplay()
+		max_length = max(len(item[0])+item[2] for item in lines)
+		pattern = [
+					"{1}{{0:<{0}}}:{2}{{1}}".format(max_length,color.BOLD,color.END), #simple
+					"{1}{{0:<{0}}}{2}".format(max_length,color.BOLD+color.RED,color.END), #Object
+					"{1}{{0:<{0}}}{2}".format(max_length,color.BOLD+color.GREEN,color.END), #array
+					]
+		for line in lines:
+			Prompt2.print_line(pattern[line[3]].format(' '*line[2]+line[0],line[1]))
+				
