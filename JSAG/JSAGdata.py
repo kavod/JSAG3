@@ -8,6 +8,7 @@ import datetime
 import copy
 import json
 from codecs import open
+import re
 import JSAGparser
 import Prompt2
 
@@ -404,7 +405,7 @@ class JSAGdata(object):
 				for key,item in enumerate(self):
 					result+=self[key].prepareDisplay(maxLevel=maxLevel,level=level+1,key=key+1)
 			else:
-				result.append((self.parser['title']+ ' ' + unicode(key),unicode('Managed'),level,4))
+				result.append((self.parser['title']+ ' ' + unicode(key),unicode('List of {0} items'.format(len(self))),level,4))
 		elif self.parser.getType() in JSAGparser.SIMPLE_TYPES:
 			result.append((self.parser['title']+ ' ' + unicode(key),unicode(self.getValue()),level,0))
 		return result
@@ -426,23 +427,38 @@ class JSAGdata(object):
 			
 	def cliChange2(self):
 		level = 0
-		lines = self.prepareDisplay(level=level)
+		lines = self.prepareDisplay(maxLevel=1,level=level)
 		curNodeType = self.parser.getType(intRepr=True)
 		if curNodeType != 0:
 			choices = []
 			Prompt2.commit()
-			self.display2(maxLevel=1,commitDisplay=False)
 			for line in [line for line in lines if line[2]==1]:
-				choices.append(line[0])
+				if line[3] == 0:
+					choices.append("{1}{0}:{2} {3}".format(line[0],color.BOLD,color.END,line[1]))
+				elif line[3] == 3:
+					choices.append("{1}{0}:{2} {3}".format(line[0],color.BOLD+color.RED,color.END,line[1]))
+				elif line[3] == 4:
+					choices.append("{1}{0}:{2} {3}".format(line[0],color.BOLD+color.GREEN,color.END,line[1]))
 			choice = Prompt2.promptChoices("Choose item to change",choices)
+			print(choice)
 			if curNodeType == 1: # object
-				key=[item[0] for item in sorted(self.parser['properties'].iteritems(),key=lambda (k,v):v['order'])][choice]
+				key=[item[0] for item in sorted(self.parser['properties'].iteritems(),key=lambda (k,v):v['order']) if item[0] in self.keys()][choice]
 			elif curNodeType == 2: # array
 				key = choice
 			self[key].cliChange2()
 		else:
-			#TODO : manage choice/bool/int and create unittest
+			#TODO : create unittest
 			question = self.parser['title']
 			instruction = self.parser['placeholder'] if 'placeholder' in self.parser.keys() else ''
 			default = self.getValue()
-			self.setValue(Prompt2.prompt(question,validate=None,instructions=instruction,default=default,choices=[]))
+			if self.parser.getType() == 'integer':
+				self.setValue(Prompt2.promptInt(question,default=default))
+			elif self.parser.getType() == 'boolean':
+				self.setValue(Prompt2.promptYN(question,default=default))
+			elif self.parser.getType() == 'choices':
+				matchObj = re.match(r'^#/choices/(\w+)$',self.parser['$def'],re.M)
+				choices = self.parser['choices'][matchObj.group(1)].values()
+				self.setValue(self.parser['choices'][matchObj.group(1)].keys()[Prompt2.promptChoices(question,choices=choices,default=default)])
+			else:
+				self.setValue(Prompt2.prompt(question,validate=None,instructions=instruction,default=default,choices=[]))
+			

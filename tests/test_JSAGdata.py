@@ -341,6 +341,12 @@ class Test_JSAGdata(unittest.TestCase):
 			self.assertEqual(myMockPrint.mock_calls[key],line)
 		self.assertEqual(len(expected),len(myMockPrint.mock_calls))
 		
+	def test_cliChange2(self):
+		parser = JSAG.loadParserFromFile(os.path.dirname(os.path.abspath(__file__))+ '/../example.jschem')
+		data = JSAG.JSAGdata(configParser=parser,value=self.dataContent)
+		data.cliChange2()
+		data.display2()
+		
 	# Interactive methods
 	"""def test_cliCreate(self):
 		self.test_load()
