@@ -273,7 +273,7 @@ class JSAGparser(dict):
 			raise Exception(self.getType())
 			
 				
-	def getType(self,path=[]):
+	def getType(self,path=[],intRepr=False):
 		configParser = self
 		if len(path) > 0:
 			for level in path:
@@ -281,6 +281,13 @@ class JSAGparser(dict):
 					configParser = configParser['items']
 				else:
 					configParser = configParser['properties'][level]
+					
+		if intRepr:
+			if configParser.getType(intRepr=False) in SIMPLE_TYPES:
+				return 0
+			else:
+				return {'object':1,'array':2}[configParser.getType()]
+		
 		if '$def' in configParser.keys():
 			matchObj = re.match(r'^#/{0}/(\w+)$'.format(self.defPattern),configParser['$def'],re.M)
 			if matchObj:

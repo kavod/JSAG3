@@ -388,29 +388,61 @@ class JSAGdata(object):
 			level: hierachy level
 			type: 0=>simple, 1=>object title, 2=>array title
 	"""
-	def prepareDisplay(self,level=0,key=''):
+	def prepareDisplay(self,maxLevel=-1,level=0,key=''):
 		result = []
 		if self.parser.getType() == 'object':
-			result.append((self.parser['title']+ ' ' + unicode(key),'',level,1))
-			for key,value in sorted(self.parser['properties'].iteritems(),key=lambda (k,v):v['order']):
-				if key in self.keys():
-					result += self[key].prepareDisplay(level=level+1)
+			if maxLevel != level:
+				result.append((self.parser['title']+ ' ' + unicode(key),'',level,1))
+				for key,value in sorted(self.parser['properties'].iteritems(),key=lambda (k,v):v['order']):
+					if key in self.keys():
+						result += self[key].prepareDisplay(maxLevel=maxLevel,level=level+1)
+			else:
+				result.append((self.parser['title']+ ' ' + unicode(key),unicode('Managed'),level,3))
 		elif self.parser.getType() == 'array':
-			result.append((self.parser['title']+ ' ' + unicode(key),'',level,2))
-			for key,item in enumerate(self):
-				result+=self[key].prepareDisplay(level=level+1,key=key+1)
+			if maxLevel != level:
+				result.append((self.parser['title']+ ' ' + unicode(key),'',level,2))
+				for key,item in enumerate(self):
+					result+=self[key].prepareDisplay(maxLevel=maxLevel,level=level+1,key=key+1)
+			else:
+				result.append((self.parser['title']+ ' ' + unicode(key),unicode('Managed'),level,4))
 		elif self.parser.getType() in JSAGparser.SIMPLE_TYPES:
 			result.append((self.parser['title']+ ' ' + unicode(key),unicode(self.getValue()),level,0))
 		return result
 		
-	def display2(self):
-		lines = self.prepareDisplay()
+	def display2(self,maxLevel=-1,commitDisplay=False):
+		lines = self.prepareDisplay(maxLevel=maxLevel)
 		max_length = max(len(item[0])+item[2] for item in lines)
 		pattern = [
-					"{1}{{0:<{0}}}:{2}{{1}}".format(max_length,color.BOLD,color.END), #simple
-					"{1}{{0:<{0}}}{2}".format(max_length,color.BOLD+color.RED,color.END), #Object
-					"{1}{{0:<{0}}}{2}".format(max_length,color.BOLD+color.GREEN,color.END), #array
+					"{1}{{0:<{0}}}:{2} {{1}}".format(max_length,color.BOLD,color.END), #simple
+					"{1}{{0:<{0}}}{2}".format(max_length,color.BOLD+color.RED,color.END), #Detailed Object
+					"{1}{{0:<{0}}}{2}".format(max_length,color.BOLD+color.GREEN,color.END), #Detailed array
+					"{1}{{0:<{0}}}:{2} {{1}}".format(max_length,color.BOLD+color.RED,color.END), #Object
+					"{1}{{0:<{0}}}:{2} {{1}}".format(max_length,color.BOLD+color.GREEN,color.END), #array
 					]
 		for line in lines:
 			Prompt2.print_line(pattern[line[3]].format(' '*line[2]+line[0],line[1]))
-				
+		if commitDisplay:
+			Prompt2.commit()
+			
+	def cliChange2(self):
+		level = 0
+		lines = self.prepareDisplay(level=level)
+		curNodeType = self.parser.getType(intRepr=True)
+		if curNodeType != 0:
+			choices = []
+			Prompt2.commit()
+			self.display2(maxLevel=1,commitDisplay=False)
+			for line in [line for line in lines if line[2]==1]:
+				choices.append(line[0])
+			choice = Prompt2.promptChoices("Choose item to change",choices)
+			if curNodeType == 1: # object
+				key=[item[0] for item in sorted(self.parser['properties'].iteritems(),key=lambda (k,v):v['order'])][choice]
+			elif curNodeType == 2: # array
+				key = choice
+			self[key].cliChange2()
+		else:
+			#TODO : manage choice/bool/int and create unittest
+			question = self.parser['title']
+			instruction = self.parser['placeholder'] if 'placeholder' in self.parser.keys() else ''
+			default = self.getValue()
+			self.setValue(Prompt2.prompt(question,validate=None,instructions=instruction,default=default,choices=[]))

@@ -52,6 +52,13 @@ class Test_JSAGparser(unittest.TestCase):
 		self.assertEqual(parser['items']['properties']['age'].getType(),u'integer')
 		self.assertEqual(parser['items']['properties']['email'].getType(),u'email')
 		self.assertEqual(parser['items']['properties']['married'].getType(),u'boolean')
+		self.assertEqual(parser.getType(intRepr=True),2)
+		self.assertEqual(parser['items'].getType(intRepr=True),1)
+		self.assertEqual(parser['items']['properties']['sex'].getType(intRepr=True),0)
+		self.assertEqual(parser['items']['properties']['firstName'].getType(intRepr=True),0)
+		self.assertEqual(parser['items']['properties']['age'].getType(intRepr=True),0)
+		self.assertEqual(parser['items']['properties']['email'].getType(intRepr=True),0)
+		self.assertEqual(parser['items']['properties']['married'].getType(intRepr=True),0)
 
 	def test_convert(self):
 		parser = JSAG.JSAGparser({'title':'number','type':'integer'})
