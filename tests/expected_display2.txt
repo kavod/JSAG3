@@ -1,15 +1,15 @@
 [1m[92mAddress book    [0m
 [1m[91m Contact 1      [0m
-[1m  Sex           :[0mm
-[1m  First Name    :[0mHomer
-[1m  Last Name     :[0mSimpson
-[1m  Age           :[0m44
-[1m  Password      :[0m****
-[1m  Married?      :[0mTrue
+[1m  Sex           :[0m m
+[1m  First Name    :[0m Homer
+[1m  Last Name     :[0m Simpson
+[1m  Age           :[0m 44
+[1m  Password      :[0m ****
+[1m  Married?      :[0m True
 [1m[91m  Spouse        [0m
-[1m   Firstname    :[0mMarge
-[1m   Wedding date :[0m1978-05-16T12:14:05+00:00
+[1m   Firstname    :[0m Marge
+[1m   Wedding date :[0m 1978-05-16T12:14:05+00:00
 [1m[92m  Children      [0m
-[1m   Child 1      :[0mBart
-[1m   Child 2      :[0mLisa
-[1m   Child 3      :[0mThe baby
+[1m   Child 1      :[0m Bart
+[1m   Child 2      :[0m Lisa
+[1m   Child 3      :[0m The baby

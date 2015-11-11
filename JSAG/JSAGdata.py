@@ -447,7 +447,6 @@ class JSAGdata(object):
 				key = choice
 			self[key].cliChange2()
 		else:
-			#TODO : create unittest
 			question = self.parser['title']
 			instruction = self.parser['placeholder'] if 'placeholder' in self.parser.keys() else ''
 			default = self.getValue()

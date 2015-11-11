@@ -62,13 +62,28 @@ def validate_YN(reponse):
 		return 'Incorrect answer'
 	return True
 	
-def promptInt(question,default=0):
+def promptInt(question,default=0,min=None,max=None):
 	if not isinstance(default,int):
 		default = None
 		default_reponse = None
 	else:
 		default_reponse = unicode(default)
-	reponse = prompt(question,default=default_reponse,validate=validate_digit)
+	if min is None:
+		valMin=lambda x:True
+		strMin = ''
+	else:
+		valMin=lambda x:int(x)>=min
+		strMin = 'min: {0} '.format(unicode(min))
+	if max is None:
+		valMax=lambda x:True
+		strMax = ''
+	else:
+		valMax=lambda x:int(x)<=max
+		strMax = 'max: {0} '.format(unicode(max))
+	strDefault= 'default: {0}'.format(unicode(default_reponse)) if default_reponse is not None else ''
+	instructions = '({0}{1}{2})'.format(strMin,strMax,strDefault) if len(strMin+strMax+strDefault)>0 else ''
+	val= lambda x:x.isdigit() and valMin(int(x)) and valMax(int(x)) or "Integer {0}{1}expected".format(strMin,strMax)
+	reponse = prompt(question,instructions=instructions,default=default_reponse,validate=val)
 	return int(reponse)
 	
 def validate_digit(reponse):
