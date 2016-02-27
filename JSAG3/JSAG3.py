@@ -51,14 +51,24 @@ class JSAG3(object):
 		if dataFile is not None:
 			self.addData(dataFile)
 			
-	def addSchema(self,schemaFile):
-		logging.debug("[JSAG3] Add schema {0}".format(unicode(schemaFile)))
-		self.schemaFile = schemaFile
-		with open(self.schemaFile) as data_file:
-			content = data_file.read()   
-			logging.debug("[JSAG3] Schema content: \n{0}".format(unicode(content)))
-			self.schema = json.loads(content)
-		setattr(self.root.schema,self.id.encode('utf8'),staticJsonFile(schemaFile))
+	def addSchema(self,schema):
+		logging.debug("[JSAG3] Add schema {0}".format(unicode(schema)))
+		if isinstance(schema,basestring):
+			# Assume schema is filename
+			self.schemaFile = schema
+			with open(self.schemaFile) as data_file:
+				content = data_file.read()   
+				logging.debug("[JSAG3] Schema content: \n{0}".format(unicode(content)))
+				jsonschema.Draft4Validator.check_schema(json.loads(content))
+				self.schema = json.loads(content)
+			setattr(self.root.schema,self.id.encode('utf8'),staticJsonFile(self.schemaFile))
+		elif isinstance(schema,dict):
+			logging.debug("[JSAG3] Schema content: \n{0}".format(unicode(schema)))
+			jsonschema.Draft4Validator.check_schema(schema)
+			self.schema = schema
+			setattr(self.root.schema,self.id.encode('utf8'),staticJsonString(self.schema))
+		else:
+			raise TypeError("[JSAG3] addSchema accept basestring (for filename) or dict. {0} received".format(type(schema)))
 		
 	def addOptions(self,optionsFile):
 		if self.schema is None:
@@ -77,7 +87,7 @@ class JSAG3(object):
 				self.data = json.load(data_file)
 		else:
 			self.createEmpty()
-		setattr(self.root.data,self.id.encode('utf8'),staticData(self.dataFile,self.schemaFile))
+		setattr(self.root.data,self.id.encode('utf8'),staticData(self.dataFile,self.schema))
 		
 	def checkCompleted(self):
 		if self.schema is None:

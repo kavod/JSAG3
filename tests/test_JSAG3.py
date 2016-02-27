@@ -53,6 +53,22 @@ class TestJSAG3(unittest.TestCase):
 		self.assertEqual(data,[])
 		os.remove(tmpfile)
 		
+	def test_addSchema_file(self):
+		with open(self.schemaFile2) as data_file:
+			schema = json.load(data_file)
+		jsag3 = self.creation(id="conf")
+		jsag3.addSchema(self.schemaFile2)
+		jsag3.addData(self.dataFile2)
+		self.assertEquals(jsag3.getRoot().schema.conf.index(),schema)
+		
+	def test_addSchema_dict(self):
+		with open(self.schemaFile2) as data_file:
+			schema = json.load(data_file)
+		jsag3 = self.creation(id="conf")
+		jsag3.addSchema(schema)
+		jsag3.addData(self.dataFile2)
+		self.assertEquals(jsag3.getRoot().schema.conf.index(),schema)
+		
 	def test_incomplete(self):
 		conf = self.creation(id=self.id2)
 		isinstance(conf,JSAG3.JSAG3)

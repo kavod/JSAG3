@@ -8,11 +8,16 @@ import cherrypy
 from functions import updateData, hidePasswords
 
 class staticData(object):
-	def __init__(self,dataFile,schemaFile):
+	def __init__(self,dataFile,schema):
+		if isinstance(schema,basestring):
+			schemaFile = schema
+			with open(schemaFile) as data_file:    
+				self.schema = json.load(data_file)
+		elif isinstance(schema,dict):
+			self.schema = schema
+		else:
+			raise TypeError("staticData accept basestring (for filename) or dict. {0} received".format(type(schema)))
 		self.dataFile = dataFile
-		self.schemaFile = schemaFile
-		with open(self.schemaFile) as data_file:    
-			self.schema = json.load(data_file)
 		self.update()
 			
 	def update(self):
