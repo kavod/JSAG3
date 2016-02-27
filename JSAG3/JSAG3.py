@@ -4,13 +4,20 @@ from __future__ import unicode_literals
 
 import os
 import json
+import logging
 import cherrypy
 import jsonschema
 from functions import updateData, hidePasswords
 from cherrypyClasses import staticData, staticJsonFile, staticJsonString, Root
 
 class JSAG3(object):
-	def __init__(self,id,schemaFile=None,optionsFile=None,dataFile=None):
+	def __init__(self,id,schemaFile=None,optionsFile=None,dataFile=None,verbosity=False):
+		logger = logging.getLogger()
+		if verbosity:
+			logger.setLevel(logging.DEBUG)
+		logging.debug("[JSAG3] Verbosity is set to {0}".format(unicode(verbosity)))
+			
+		logging.debug("[JSAG3] Creation of JSAG3 with id '{0}'".format(unicode(id)))
 		if not isinstance(id, basestring):
 			raise Exception("id must be str or unicode. {0} received".format(type(id)))
 		
@@ -45,9 +52,12 @@ class JSAG3(object):
 			self.addData(dataFile)
 			
 	def addSchema(self,schemaFile):
+		logging.debug("[JSAG3] Add schema {0}".format(unicode(schemaFile)))
 		self.schemaFile = schemaFile
-		with open(self.schemaFile) as data_file:    
-			self.schema = json.load(data_file)
+		with open(self.schemaFile) as data_file:
+			content = data_file.read()   
+			logging.debug("[JSAG3] Schema content: \n{0}".format(unicode(content)))
+			self.schema = json.loads(content)
 		setattr(self.root.schema,self.id.encode('utf8'),staticJsonFile(schemaFile))
 		
 	def addOptions(self,optionsFile):

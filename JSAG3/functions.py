@@ -2,6 +2,8 @@
 #encoding:utf-8
 from __future__ import unicode_literals
 
+import logging
+
 PASSWORDMASK='********'
 
 def updateData(dataSrc,dataDst,schema):
@@ -29,6 +31,7 @@ def updateData(dataSrc,dataDst,schema):
 		return dataDst
 
 def hidePasswords(data,schema):
+	logging.debug("[JSAG3.hidePasswords] Hidepassword of {0}".format(unicode(data)))
 	if 'type' in schema.keys() and schema['type'] == 'object' and 'properties' in schema.keys():
 		result = {}
 		for key in schema['properties'].keys():

@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+#encoding:utf-8
+from __future__ import unicode_literals
+
+import os
+import json
+import unittest
+import logging
+import tempfile
+import JSAG3
+
+DEBUG=False
+
+class TestJSAG3(unittest.TestCase):
+	def setUp(self):
+		self.absdir = os.path.abspath(os.path.dirname(__file__))
+	
+		# Complete test case
+		self.id1="conf1"
+		self.schemaFile1=self.absdir+"/JSAG3.jschem"
+		self.optionsFile1=self.absdir+"/JSAG3.jopt"
+		self.dataFile1=self.absdir+"/JSAG3.json"
+		
+		# Options file not exists
+		self.id2="conf2"
+		self.schemaFile2=self.schemaFile1
+		self.optionsFile2=None
+		self.dataFile2=self.dataFile1
+		
+		# Data file not exists
+		self.id3="conf3"
+		self.schemaFile3=self.schemaFile1
+		self.optionsFile3=self.optionsFile1
+		self.dataFile3=None
+		
+	def test_creation(self):
+		conf = self.creation(id=self.id1,schemaFile=self.schemaFile1,optionsFile=self.optionsFile1,dataFile=self.dataFile1)
+		isinstance(conf,JSAG3.JSAG3)
+		
+	def test_creation_without_options(self):
+		conf = self.creation(id=self.id2,schemaFile=self.schemaFile2,optionsFile=self.optionsFile2,dataFile=self.dataFile2)
+		isinstance(conf,JSAG3.JSAG3)
+		
+	def test_creation_without_datafile(self):
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		os.remove(tmpfile)
+		self.assertFalse(os.path.isfile(tmpfile))
+		conf = self.creation(id=self.id3,schemaFile=self.schemaFile3,optionsFile=self.optionsFile3,dataFile=tmpfile)
+		isinstance(conf,JSAG3.JSAG3)
+		self.assertTrue(os.path.isfile(tmpfile))
+		with open(tmpfile) as data_file:
+			data = json.load(data_file)
+		self.assertEqual(data,[])
+		os.remove(tmpfile)
+		
+	def test_incomplete(self):
+		conf = self.creation(id=self.id2)
+		isinstance(conf,JSAG3.JSAG3)
+		with self.assertRaises(Exception):
+			conf.checkCompleted()
+		conf.addSchema(self.schemaFile2)
+		with self.assertRaises(Exception):
+			conf.checkCompleted()
+		conf.addData(self.dataFile2)
+		try:
+			conf.checkCompleted()
+		except:
+			self.fail("conf2 should be completed")
+			
+	def test_getConf(self):
+		initial_conf = {'/'.encode('utf8'):{}}
+		conf = {'/data'.encode('utf8'): {'tools.caching.on': False}}
+		conf.update(initial_conf)
+		jsag3 = self.creation(id=self.id1,schemaFile=self.schemaFile1,optionsFile=self.optionsFile1,dataFile=self.dataFile1)
+		self.assertEquals(conf,jsag3.getConf(initial_conf))
+		
+	def test_getRoot(self):
+		jsag3 = self.creation(id=self.id1,schemaFile=self.schemaFile1,optionsFile=self.optionsFile1,dataFile=self.dataFile1)
+		self.assertTrue(hasattr(jsag3.getRoot(),"schema"))
+		self.assertTrue(hasattr(jsag3.getRoot(),"options"))
+		self.assertTrue(hasattr(jsag3.getRoot(),"data"))
+		
+	def test_updateData(self):
+		with open(self.dataFile1) as data_file:
+			data = json.load(data_file)
+			
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		os.remove(tmpfile)
+		self.assertFalse(os.path.isfile(tmpfile))
+		conf = self.creation(id=self.id3,schemaFile=self.schemaFile3,optionsFile=self.optionsFile3,dataFile=tmpfile)
+		isinstance(conf,JSAG3.JSAG3)
+		self.assertTrue(os.path.isfile(tmpfile))
+		conf.updateData(data)
+		with open(tmpfile) as data_file:
+			newData = json.load(data_file)
+		self.assertEqual(newData,data)
+		os.remove(tmpfile)
+		
+	def creation(self,id,schemaFile=None,optionsFile=None,dataFile=None):
+		return JSAG3.JSAG3(id,schemaFile,optionsFile,dataFile,verbosity=DEBUG)

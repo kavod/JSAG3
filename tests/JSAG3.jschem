@@ -1,0 +1,40 @@
+{
+    "title":"Torrents providers",
+    "description":"Which torrent provider do you wish to use?",
+    "type":"array",
+    "items": {
+		"title":"provider",
+		"type":"object",
+		"properties": {
+			"provider_type": {
+				"type":"string",
+				"title":"provider_type"
+			},
+			"authentification": {
+				"type":"object",
+				"description": "Torrent Provider authentification",
+				"properties": {
+					"username":{
+						"title": "Username",
+						"type":"string"
+					},
+					"password":{
+						"title": "Password",
+						"type":"string",
+						"format":"password"
+					}
+				}
+			},
+			"keywords": {
+				"title": "Keywords",
+				"type": "array",
+				"items": {
+					"type":"string"
+				}
+			}
+		},
+		"dependencies": {
+			"authentification":["provider_type"]
+		}
+    }
+}
