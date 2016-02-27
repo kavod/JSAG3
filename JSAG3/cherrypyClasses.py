@@ -8,7 +8,10 @@ import cherrypy
 from functions import updateData, hidePasswords
 
 class staticData(object):
-	def __init__(self,dataFile,schema):
+	def __init__(self,jsag3):
+		self.jsag3 = jsag3
+	
+	"""def __init__(self,dataFile,schema):
 		if isinstance(schema,basestring):
 			schemaFile = schema
 			with open(schemaFile) as data_file:    
@@ -23,16 +26,17 @@ class staticData(object):
 	def update(self):
 		if not hasattr(self,"lastModified") or os.path.getmtime(self.dataFile) != self.lastModified:
 			with open(self.dataFile) as data_file:    
-				self.data = hidePasswords(json.load(data_file),self.schema)
+				self.data = hidePasswords(json.load(data_file),self.schema)"""
 			
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def index(self):
-		self.update()
+		#self.update()
 		cherrypy.response.headers['Cache-Control'] = 'no-cache, must-revalidate'
 		cherrypy.response.headers['Pragma'] = 'no-cache'
 		cherrypy.lib.caching.expires(secs=0)
-		return self.data
+		#return self.data
+		return self.jsag3.getValue(hidePassword=True)
 
 class staticJsonFile(object):
 	def __init__(self,filename):

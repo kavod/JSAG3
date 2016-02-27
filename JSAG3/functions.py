@@ -7,6 +7,7 @@ import logging
 PASSWORDMASK='********'
 
 def updateData(dataSrc,dataDst,schema):
+	logging.debug("[JSAG3.updateData] Update data from\n{0}\n --to--\n{1}.".format(dataSrc,dataDst))
 	if 'type' in schema.keys() and schema['type'] == 'object' and 'properties' in schema.keys():
 		result = {}
 		for key in schema['properties'].keys():

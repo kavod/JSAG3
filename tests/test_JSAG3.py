@@ -22,13 +22,13 @@ class TestJSAG3(unittest.TestCase):
 		self.dataFile1=self.absdir+"/JSAG3.json"
 		
 		# Options file not exists
-		self.id2="conf2"
+		self.id2=self.id1
 		self.schemaFile2=self.schemaFile1
 		self.optionsFile2=None
 		self.dataFile2=self.dataFile1
 		
 		# Data file not exists
-		self.id3="conf3"
+		self.id3=self.id1
 		self.schemaFile3=self.schemaFile1
 		self.optionsFile3=self.optionsFile1
 		self.dataFile3=None
@@ -50,24 +50,24 @@ class TestJSAG3(unittest.TestCase):
 		self.assertTrue(os.path.isfile(tmpfile))
 		with open(tmpfile) as data_file:
 			data = json.load(data_file)
-		self.assertEqual(data,[])
+		self.assertEqual(data,{self.id3:[]})
 		os.remove(tmpfile)
 		
 	def test_addSchema_file(self):
 		with open(self.schemaFile2) as data_file:
 			schema = json.load(data_file)
-		jsag3 = self.creation(id="conf")
+		jsag3 = self.creation(id=self.id2)
 		jsag3.addSchema(self.schemaFile2)
 		jsag3.addData(self.dataFile2)
-		self.assertEquals(jsag3.getRoot().schema.conf.index(),schema)
+		self.assertEquals(getattr(jsag3.getRoot().schema,self.id2).index(),schema)
 		
 	def test_addSchema_dict(self):
 		with open(self.schemaFile2) as data_file:
 			schema = json.load(data_file)
-		jsag3 = self.creation(id="conf")
+		jsag3 = self.creation(id=self.id2)
 		jsag3.addSchema(schema)
 		jsag3.addData(self.dataFile2)
-		self.assertEquals(jsag3.getRoot().schema.conf.index(),schema)
+		self.assertEquals(getattr(jsag3.getRoot().schema,self.id2).index(),schema)
 		
 	def test_incomplete(self):
 		conf = self.creation(id=self.id2)
@@ -98,7 +98,7 @@ class TestJSAG3(unittest.TestCase):
 		
 	def test_updateData(self):
 		with open(self.dataFile1) as data_file:
-			data = json.load(data_file)
+			data = json.load(data_file)[self.id1]
 			
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
@@ -109,7 +109,7 @@ class TestJSAG3(unittest.TestCase):
 		conf.updateData(data)
 		with open(tmpfile) as data_file:
 			newData = json.load(data_file)
-		self.assertEqual(newData,data)
+		self.assertEqual(newData,{self.id1:data})
 		os.remove(tmpfile)
 		
 	def creation(self,id,schemaFile=None,optionsFile=None,dataFile=None):

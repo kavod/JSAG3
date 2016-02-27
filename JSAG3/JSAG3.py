@@ -71,6 +71,7 @@ class JSAG3(object):
 			raise TypeError("[JSAG3] addSchema accept basestring (for filename) or dict. {0} received".format(type(schema)))
 		
 	def addOptions(self,optionsFile):
+		logging.debug("[JSAG3] Add options {0}".format(unicode(optionsFile)))
 		if self.schema is None:
 			raise Exception("Schema has not been provided")
 		self.optionsFile = optionsFile
@@ -79,15 +80,17 @@ class JSAG3(object):
 		setattr(self.root.options,self.id.encode('utf8'),staticJsonFile(optionsFile))
 		
 	def addData(self,dataFile):
+		logging.debug("[JSAG3] Add data {0}".format(unicode(dataFile)))
 		if self.schema is None:
 			raise Exception("Schema has not been provided")
 		self.dataFile = dataFile
-		if os.path.isfile(self.dataFile):
+		if self.isDataInitialized(self.dataFile):
 			with open(self.dataFile) as data_file:    
-				self.data = json.load(data_file)
+				self.data = json.load(data_file)[self.id]
 		else:
-			self.createEmpty()
-		setattr(self.root.data,self.id.encode('utf8'),staticData(self.dataFile,self.schema))
+			self.initDataFile()
+		setattr(self.root.data,self.id.encode('utf8'),staticData(self))
+		#setattr(self.root.data,self.id.encode('utf8'),staticData(self.dataFile,self.schema))
 		
 	def checkCompleted(self):
 		if self.schema is None:
@@ -95,7 +98,7 @@ class JSAG3(object):
 		if self.dataFile is None:
 			raise Exception("Datafile has not been provided")
 			
-	def createEmpty(self):
+	"""def createEmpty(self):
 		self.checkCompleted()
 		if 'type' in self.schema.keys() and self.schema['type'] == 'object':
 			self.data = {}
@@ -104,7 +107,51 @@ class JSAG3(object):
 		else:
 			self.data = None
 		with open(self.dataFile, 'w') as outfile:
-			json.dump(self.data, outfile)
+			json.dump(self.data, outfile)"""
+			
+	def initDataFile(self):
+		logging.debug("[JSAG3] Initialize data '{0}' in {1}.".format(self.id,unicode(self.dataFile)))
+		self.checkCompleted()
+		
+		if 'type' in self.schema.keys() and self.schema['type'] == 'object':
+			logging.debug("[JSAG3] Data is 'object' initializing {}.")
+			self.data = {}
+		elif 'type' in self.schema.keys() and self.schema['type'] == 'array':
+			logging.debug("[JSAG3] Data is 'array' initializing [].")
+			self.data = []
+		else:
+			logging.debug("[JSAG3] Data is '{0}' initializing [].".format(self.schema['type']))
+			self.data = None
+			
+		if os.path.isfile(self.dataFile):
+			with open(self.dataFile) as outfile:
+				existingData = json.load(outfile)
+				logging.debug("[JSAG3] Existing data:\n{0}".format(existingData))
+			newData = existingData.copy()
+			newData.update({self.id:self.data})
+		else:
+			newData = {self.id:self.data}
+			
+		with open(self.dataFile, 'w') as outfile:
+			json.dump(newData, outfile)
+			
+	def isDataInitialized(self,dataFile):
+		if os.path.isfile(self.dataFile):
+			with open(self.dataFile) as outfile:
+				content = outfile.read()
+				try:
+					existingData = json.loads(content)
+				except:
+					raise Exception("Cannot parse {0}".format(dataFile))
+				if self.id in existingData.keys():
+					logging.debug("[JSAG3] data file {0} already contains data.".format(unicode(dataFile)))
+					return True
+				else:
+					logging.debug("[JSAG3] data file {0} does not contain data '{1}'. Existing data: {2}".format(unicode(dataFile),self.id,existingData.keys()))
+					return False
+		else:
+			logging.debug("[JSAG3] data file {0} does not exist.".format(unicode(dataFile)))
+			return False
 		
 	def getConf(self,conf={}):
 		self.checkCompleted()
@@ -139,7 +186,7 @@ class JSAG3(object):
 		self.checkCompleted()
 		self.isValid()
 		with open(self.dataFile, 'w') as outfile:
-			json.dump(self.data, outfile)
+			json.dump({self.id:self.data}, outfile)
 		
 	def __repr__(self):
 		return "JSAG3(schema={0},options={1},dataFile=None,data=None)".encode('utf8').format(self.schema,self.options,self.dataFile,self.data)
@@ -228,6 +275,25 @@ class JSAG3(object):
 		
 	def setValue(self,value):
 		self.data = value
+		
+	def getValue(self,hidePassword=True):
+		self.updateValue()
+		if hidePassword:
+			return hidePasswords(self.data,self.schema)
+		else:
+			return self.data
+		
+	def updateValue(self):
+		if self.isDataInitialized(self.dataFile):
+			if not hasattr(self,"lastModified") or os.path.getmtime(self.dataFile) != self.lastModified:
+				with open(self.dataFile) as data_file:    
+					self.data = json.load(data_file)[self.id]
+				self.lastModified = os.path.getmtime(self.dataFile)
+			else:
+				return
+		else:
+			self.initDataFile()
+		setattr(self.root.data,self.id.encode('utf8'),staticData(self))
 		
 	def isValid(self,data=None):
 		self.checkCompleted()
