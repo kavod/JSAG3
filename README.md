@@ -1,4 +1,4 @@
-# JSAP (jsonSchemaAppGenerator)
+# JSAG (jsonSchemaAppGenerator)
 
 *formely "jsonConfigParser"*
 
