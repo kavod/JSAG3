@@ -28,6 +28,10 @@
 			"keywords": {
 				"actionbarStyle": "right",
 				"order":3
+			},
+			"date-time": {
+				"label":"A date-time field",
+				"dateFormat": "YYYY-MM-DD HH:mm:ss"
 			}
 		},
 		"collapsed":true
