@@ -19,7 +19,7 @@ def updateData(dataSrc,dataDst,schema):
 		result = []
 		i = 0
 		for item in dataDst:
-			if len(dataSrc) > i:
+			if dataSrc is not None and len(dataSrc) > i:
 				src = dataSrc[i]
 			else:
 				src = None

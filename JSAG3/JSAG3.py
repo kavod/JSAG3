@@ -177,6 +177,7 @@ class JSAG3(object):
 		
 	def updateData(self,newData):
 		self.checkCompleted()
+		self.updateValue()
 		newData = updateData(self.data,newData,self.schema)
 		self.isValid(newData)
 		self.data = newData
@@ -185,8 +186,11 @@ class JSAG3(object):
 	def save(self):
 		self.checkCompleted()
 		self.isValid()
+		with open(self.dataFile) as outfile:
+			content = json.load(outfile)
+		content[self.id] = self.data
 		with open(self.dataFile, 'w') as outfile:
-			json.dump({self.id:self.data}, outfile)
+			json.dump(content, outfile)
 		
 	def __repr__(self):
 		return "JSAG3(schema={0},options={1},dataFile=None,data=None)".encode('utf8').format(self.schema,self.options,self.dataFile,self.data)

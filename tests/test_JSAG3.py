@@ -112,5 +112,21 @@ class TestJSAG3(unittest.TestCase):
 		self.assertEqual(newData,{self.id1:data})
 		os.remove(tmpfile)
 		
+	def test_share_data_file(self):
+		value = [{"keywords": [], "provider_type": "kat"}]
+	
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		os.remove(tmpfile)
+		conf1 = self.creation(id="conf1",schemaFile=self.schemaFile3,optionsFile=self.optionsFile3,dataFile=tmpfile)
+		conf2 = self.creation(id="conf2",schemaFile=self.schemaFile3,optionsFile=self.optionsFile3,dataFile=tmpfile)
+		conf1.setValue(value)
+		conf2.setValue(value)
+		conf1.save()
+		conf2.save()
+		with open(tmpfile) as data_file:
+			data = json.load(data_file)
+		self.assertEqual(data,{"conf1":value,"conf2":value})
+		os.remove(tmpfile)
+		
 	def creation(self,id,schemaFile=None,optionsFile=None,dataFile=None):
 		return JSAG3.JSAG3(id,schemaFile,optionsFile,dataFile,verbosity=DEBUG)
