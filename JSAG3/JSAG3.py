@@ -199,8 +199,7 @@ class JSAG3(object):
 		return unicode(self.data).encode('utf8')
 		
 	def __getitem__(self,key):
-		self.checkCompleted()
-		if self.data is None:
+		if self.data is None or not isinstance(self.schema,dict):
 			raise IndexError
 		if 'type' in self.schema.keys() and self.schema['type'] == 'object':
 			if key not in self.data.keys():
@@ -217,8 +216,7 @@ class JSAG3(object):
 			raise TypeError("value is not object nor list")
 	
 	def _checkitem(self,key):
-		self.checkCompleted()
-		if self.data is None:
+		if self.data is None or not isinstance(self.schema,dict):
 			raise IndexError
 		if 'type' in self.schema.keys() and self.schema['type'] == 'object':
 			if key not in self.data.keys():
@@ -241,7 +239,6 @@ class JSAG3(object):
 		del(self.data[key])
 		
 	def __len__(self):
-		self.checkCompleted()
 		if 'type' in self.schema.keys() and self.schema['type'] == 'array':
 			if self.data is None:
 				return 0
@@ -254,15 +251,15 @@ class JSAG3(object):
 			raise TypeError("JSAG3 with type {0} has no len()".format(self.configParser.getType()))
 
 	def keys(self):
-		self.checkCompleted()
-		if self.data is None:
+		if self.data is None or not isinstance(self.schema,dict):
 			return []
 		elif 'type' in self.schema.keys() and self.schema['type'] == 'array':
 			return range(0,len(self.data))
 		return self.data.keys()
 		
 	def getType(self):
-		self.checkCompleted()
+		if not isinstance(self.schema,dict):
+			return ''
 		if 'type' in self.schema.keys():
 			return self.schema['type']
 		else:
@@ -288,6 +285,8 @@ class JSAG3(object):
 			return self.data
 		
 	def updateValue(self):
+		if self.dataFile is None:
+			return
 		if self.isDataInitialized(self.dataFile):
 			if not hasattr(self,"lastModified") or os.path.getmtime(self.dataFile) != self.lastModified:
 				with open(self.dataFile) as data_file:    
@@ -300,7 +299,8 @@ class JSAG3(object):
 		setattr(self.root.data,self.id.encode('utf8'),staticData(self))
 		
 	def isValid(self,data=None):
-		self.checkCompleted()
+		if not isinstance(self.schema,dict):
+			raise Exception("Schema has not been provided")
 		if data is None:
 			data = self.data
 		jsonschema.validate(data,self.schema,format_checker=jsonschema.FormatChecker())
