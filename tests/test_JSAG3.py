@@ -7,6 +7,7 @@ import json
 import unittest
 import logging
 import tempfile
+import shutil
 import JSAG3
 
 DEBUG=False
@@ -135,6 +136,16 @@ class TestJSAG3(unittest.TestCase):
 			data = json.load(data_file)
 		self.assertEqual(data,{"conf":value})
 		os.remove(tmpfile)	
+		
+	def test_save_with_filename_and_content(self):
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(self.dataFile1,tmpfile)
+		jsag3 = self.creation(id="conf1")
+		jsag3.addSchema(self.schemaFile1)
+		jsag3.addData(tmpfile)
+		jsag3.save()
+		os.remove(tmpfile)
 		
 	def test_share_data_file(self):
 		value = [{"keywords": [], "provider_type": "kat"}]

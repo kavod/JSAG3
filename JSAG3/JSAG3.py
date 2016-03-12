@@ -8,7 +8,7 @@ import copy
 import logging
 import cherrypy
 import jsonschema
-from functions import updateData, hidePasswords
+from functions import updateData, hidePasswords, string2datetime, datetime2string
 from cherrypyClasses import staticData, staticJsonFile, staticJsonString, Root
 
 class JSAG3(object):
@@ -87,7 +87,7 @@ class JSAG3(object):
 		self.dataFile = dataFile
 		if self.isDataInitialized(self.dataFile):
 			with open(self.dataFile) as data_file:    
-				self.data = json.load(data_file)[self.id]
+				self.setValue(json.load(data_file)[self.id])
 		else:
 			self.initDataFile()
 		setattr(self.root.data,self.id.encode('utf8'),staticData(self))
@@ -98,7 +98,7 @@ class JSAG3(object):
 		if self.schema is None:
 			raise Exception("Schema has not been provided")
 		if self.dataFile is None:
-			raise Exception("Datafile has not been provided")
+			raise Exception("Datafile has not been provided")	
 			
 	def initDataFile(self):
 		logging.debug("[JSAG3] Initialize data '{0}' in {1}.".format(self.id,unicode(self.dataFile)))
@@ -106,13 +106,13 @@ class JSAG3(object):
 		
 		if 'type' in self.schema.keys() and self.schema['type'] == 'object':
 			logging.debug("[JSAG3] Data is 'object' initializing {}.")
-			self.data = {}
+			self.setValue({})
 		elif 'type' in self.schema.keys() and self.schema['type'] == 'array':
 			logging.debug("[JSAG3] Data is 'array' initializing [].")
-			self.data = []
+			self.setValue([])
 		else:
 			logging.debug("[JSAG3] Data is '{0}' initializing [].".format(self.schema['type']))
-			self.data = None
+			self.setValue(None)
 			
 		if os.path.isfile(self.dataFile):
 			with open(self.dataFile) as outfile:
@@ -128,8 +128,8 @@ class JSAG3(object):
 			
 	# Check if dataFile is set and already contain suitable property
 	def isDataInitialized(self,dataFile):
-		if os.path.isfile(self.dataFile):
-			with open(self.dataFile) as outfile:
+		if os.path.isfile(dataFile):
+			with open(dataFile) as outfile:
 				content = outfile.read()
 				try:
 					existingData = json.loads(content)
@@ -172,7 +172,7 @@ class JSAG3(object):
 		self.updateValue()
 		newData = updateData(self.data,newData,self.schema)
 		self.isValid(newData)
-		self.data = newData
+		self.setValue(newData)
 		self.save()
 		
 	def save(self,filename=None):
@@ -184,7 +184,7 @@ class JSAG3(object):
 		self.isValid()
 		with open(self.dataFile) as outfile:
 			content = json.load(outfile)
-		content[self.id] = self.data
+		content[self.id] = datetime2string(self.data,self.schema)
 		with open(self.dataFile, 'w') as outfile:
 			json.dump(content, outfile)
 		
@@ -266,14 +266,17 @@ class JSAG3(object):
 			raise Exception("Insert can only be used on array data")
 		y = copy.deepcopy(x)
 		if self.data is None:
-			self.data = []
+			self.setValue([])
+			#self.data = []
 		self.data.insert(i,y)
 		
 	def append(self,x):
 		self.insert(len(self),x)
 		
 	def setValue(self,value):
-		self.data = value
+		if self.schema is None:
+			raise Exception("Schema has not been provided")
+		self.data = string2datetime(value,self.schema)
 		
 	def getValue(self,hidePassword=True):
 		self.updateValue()
@@ -288,7 +291,7 @@ class JSAG3(object):
 		if self.isDataInitialized(self.dataFile):
 			if not hasattr(self,"lastModified") or os.path.getmtime(self.dataFile) != self.lastModified:
 				with open(self.dataFile) as data_file:    
-					self.data = json.load(data_file)[self.id]
+					self.setValue(json.load(data_file)[self.id])
 				self.lastModified = os.path.getmtime(self.dataFile)
 			else:
 				return
@@ -301,5 +304,5 @@ class JSAG3(object):
 			raise Exception("Schema has not been provided")
 		if data is None:
 			data = self.data
-		jsonschema.validate(data,self.schema,format_checker=jsonschema.FormatChecker())
+		jsonschema.validate(datetime2string(data,self.schema),self.schema,format_checker=jsonschema.FormatChecker())
 		return True

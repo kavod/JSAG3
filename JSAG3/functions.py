@@ -3,6 +3,9 @@
 from __future__ import unicode_literals
 
 import logging
+import datetime
+import dateutil.parser
+import tzlocal
 
 PASSWORDMASK='********'
 
@@ -35,16 +38,58 @@ def hidePasswords(data,schema):
 	logging.debug("[JSAG3.hidePasswords] Hidepassword of {0}".format(unicode(data)))
 	if 'type' in schema.keys() and schema['type'] == 'object' and 'properties' in schema.keys():
 		result = {}
-		for key in schema['properties'].keys():
-			if key in data.keys():
-				result.update({key:hidePasswords(data[key],schema['properties'][key])})
+		if data is not None:
+			for key in schema['properties'].keys():
+				if key in data.keys():
+					result.update({key:hidePasswords(data[key],schema['properties'][key])})
 		return result
 	elif 'type' in schema.keys() and schema['type'] == 'array' and 'items' in schema.keys():
 		result = []
-		for item in data:
-			result.append(hidePasswords(item,schema['items']))
+		if data is not None:
+			for item in data:
+				result.append(hidePasswords(item,schema['items']))
 		return result
 	elif 'format' in schema.keys() and schema['format'] == 'password':
 		return PASSWORDMASK
+	else:
+		return data
+		
+def string2datetime(data,schema):
+	logging.debug("[JSAG3.string2datetime] string2datetime of {0}".format(unicode(data)))
+	if 'type' in schema.keys() and schema['type'] == 'object' and 'properties' in schema.keys():
+		result = {}
+		if data is not None:
+			for key in schema['properties'].keys():
+				if key in data.keys():
+					result.update({key:string2datetime(data[key],schema['properties'][key])})
+		return result
+	elif 'type' in schema.keys() and schema['type'] == 'array' and 'items' in schema.keys():
+		result = []
+		if data is not None:
+			for item in data:
+				result.append(string2datetime(item,schema['items']))
+		return result
+	elif 'format' in schema.keys() and schema['format'] == 'datetime' and isinstance(data,basestring):
+		return dateutil.parser.parse(data)
+	else:
+		return data
+				
+def datetime2string(data,schema):
+	logging.debug("[JSAG3.datetime2string] datetime2string of {0}".format(unicode(data)))
+	if 'type' in schema.keys() and schema['type'] == 'object' and 'properties' in schema.keys():
+		result = {}
+		if data is not None:
+			for key in schema['properties'].keys():
+				if key in data.keys():
+					result.update({key:datetime2string(data[key],schema['properties'][key])})
+		return result
+	elif 'type' in schema.keys() and schema['type'] == 'array' and 'items' in schema.keys():
+		result = []
+		if data is not None:
+			for item in data:
+				result.append(datetime2string(item,schema['items']))
+		return result
+	elif 'format' in schema.keys() and schema['format'] == 'datetime' and isinstance(data,datetime.datetime):
+		return data.isoformat()
 	else:
 		return data
