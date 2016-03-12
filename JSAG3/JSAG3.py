@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import os
 import json
+import copy
 import logging
 import cherrypy
 import jsonschema
@@ -90,24 +91,14 @@ class JSAG3(object):
 		else:
 			self.initDataFile()
 		setattr(self.root.data,self.id.encode('utf8'),staticData(self))
-		#setattr(self.root.data,self.id.encode('utf8'),staticData(self.dataFile,self.schema))
 		
+	# Check if both schema and dataFile are set
+	# If passed, we can consider that schema is valid and dataFile is initialized
 	def checkCompleted(self):
 		if self.schema is None:
 			raise Exception("Schema has not been provided")
 		if self.dataFile is None:
 			raise Exception("Datafile has not been provided")
-			
-	"""def createEmpty(self):
-		self.checkCompleted()
-		if 'type' in self.schema.keys() and self.schema['type'] == 'object':
-			self.data = {}
-		elif 'type' in self.schema.keys() and self.schema['type'] == 'array':
-			self.data = []
-		else:
-			self.data = None
-		with open(self.dataFile, 'w') as outfile:
-			json.dump(self.data, outfile)"""
 			
 	def initDataFile(self):
 		logging.debug("[JSAG3] Initialize data '{0}' in {1}.".format(self.id,unicode(self.dataFile)))
@@ -135,6 +126,7 @@ class JSAG3(object):
 		with open(self.dataFile, 'w') as outfile:
 			json.dump(newData, outfile)
 			
+	# Check if dataFile is set and already contain suitable property
 	def isDataInitialized(self,dataFile):
 		if os.path.isfile(self.dataFile):
 			with open(self.dataFile) as outfile:
@@ -183,7 +175,11 @@ class JSAG3(object):
 		self.data = newData
 		self.save()
 		
-	def save(self):
+	def save(self,filename=None):
+		if filename is not None:
+			data = self.getValue(hidePassword=False)
+			self.addData(filename)
+			self.setValue(data)
 		self.checkCompleted()
 		self.isValid()
 		with open(self.dataFile) as outfile:
@@ -269,6 +265,8 @@ class JSAG3(object):
 		if self.getType() != 'array':
 			raise Exception("Insert can only be used on array data")
 		y = copy.deepcopy(x)
+		if self.data is None:
+			self.data = []
 		self.data.insert(i,y)
 		
 	def append(self,x):
