@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import os
 import json
 import cherrypy
-from functions import updateData, hidePasswords
+from functions import updateData, hidePasswords, string2datetime, datetime2string
 
 class staticData(object):
 	def __init__(self,jsag3):
@@ -17,7 +17,7 @@ class staticData(object):
 		cherrypy.response.headers['Cache-Control'] = 'no-cache, must-revalidate'
 		cherrypy.response.headers['Pragma'] = 'no-cache'
 		cherrypy.lib.caching.expires(secs=0)
-		return self.jsag3.getValue(hidePassword=True)
+		return datetime2string(self.jsag3.getValue(hidePassword=True),self.jsag3.schema)
 
 class staticJsonFile(object):
 	def __init__(self,filename):
