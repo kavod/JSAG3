@@ -20,14 +20,17 @@ class staticData(object):
 		return datetime2string(self.jsag3.getValue(hidePassword=True),self.jsag3.schema)
 
 class staticJsonFile(object):
-	def __init__(self,filename):
+	def __init__(self,filename,key=None):
+		self.key = key
 		self.filename = filename
 		self.update()
 			
 	def update(self):
 		if not hasattr(self,"lastModified") or os.path.getmtime(self.filename) != self.lastModified:
-			with open(self.filename) as data_file:    
-				self.data = json.load(data_file)
+			with open(self.filename) as data_file:  
+				self.data = json.load(data_file) 
+				if self.key is not None: 
+					self.data = self.data[self.key]
 			self.lastModified = os.path.getmtime(self.filename)
 			
 	@cherrypy.expose

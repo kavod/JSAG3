@@ -90,7 +90,7 @@ class JSAG3(object):
 				self.setValue(json.load(data_file)[self.id])
 		else:
 			self.initDataFile()
-		setattr(self.root.data,self.id.encode('utf8'),staticData(self))
+		setattr(self.root.data,self.id.encode('utf8'),staticJsonFile(self.dataFile,self.id))
 		
 	# Check if both schema and dataFile are set
 	# If passed, we can consider that schema is valid and dataFile is initialized
