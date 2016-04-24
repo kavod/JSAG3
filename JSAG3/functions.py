@@ -70,7 +70,11 @@ def string2datetime(data,schema):
 				result.append(string2datetime(item,schema['items']))
 		return result
 	elif 'format' in schema.keys() and schema['format'] == 'datetime' and isinstance(data,basestring):
-		return dateutil.parser.parse(data)
+		date = dateutil.parser.parse(data)
+		if date.tzinfo is not None and date.tzinfo.utcoffset(date) is not None:
+			return date
+		else:
+			tzlocal.get_localzone().localize(dateutil.parser.parse(data))
 	else:
 		return data
 				
