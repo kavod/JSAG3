@@ -74,7 +74,7 @@ def string2datetime(data,schema):
 		if date.tzinfo is not None and date.tzinfo.utcoffset(date) is not None:
 			return date
 		else:
-			tzlocal.get_localzone().localize(dateutil.parser.parse(data))
+			return tzlocal.get_localzone().localize(dateutil.parser.parse(data))
 	else:
 		return data
 				
