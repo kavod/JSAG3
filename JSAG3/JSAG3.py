@@ -227,7 +227,7 @@ class JSAG3(object):
 			raise TypeError("value is not object nor list")
 			
 	def __setitem__(self,key,value):
-		self._checkitem(key)
+		#self._checkitem(key)
 		self.data[key] = value
 		
 	def __delitem__(self,key):
