@@ -90,6 +90,7 @@ class JSAG3(object):
 				self.setValue(json.load(data_file)[self.id])
 		else:
 			self.initDataFile()
+		self.lastModified = os.path.getmtime(self.dataFile)
 		setattr(self.root.data,self.id.encode('utf8'),staticJsonFile(self.dataFile,self.id))
 		
 	# Check if both schema and dataFile are set
@@ -117,6 +118,7 @@ class JSAG3(object):
 		if os.path.isfile(self.dataFile):
 			with open(self.dataFile) as outfile:
 				existingData = json.load(outfile)
+				self.lastModified = os.path.getmtime(self.dataFile)
 				logging.debug("[JSAG3] Existing data:\n{0}".format(existingData))
 			newData = existingData.copy()
 			newData.update({self.id:self.data})
