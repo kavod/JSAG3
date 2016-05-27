@@ -13,12 +13,7 @@ from cherrypyClasses import staticData, staticJsonFile, staticJsonString, Root
 
 class JSAG3(object):
 	def __init__(self,id,schemaFile=None,optionsFile=None,dataFile=None,verbosity=False):
-		logger = logging.getLogger()
-		if verbosity:
-			logger.setLevel(logging.DEBUG)
-		logging.debug("[JSAG3] Verbosity is set to {0}".format(unicode(verbosity)))
 
-		logging.debug("[JSAG3] Creation of JSAG3 with id '{0}'".format(unicode(id)))
 		if not isinstance(id, basestring):
 			raise Exception("id must be str or unicode. {0} received".format(type(id)))
 
@@ -40,9 +35,28 @@ class JSAG3(object):
 		self.options = {}
 		self.dataFile = None
 		self.data = None
+		self.verbosity = verbosity
+
+		self._setLogger(self.id)
+
+		self.logger.debug("Creation of JSAG3 with id '{0}'".format(unicode(self.id)))
 
 		setattr(self.root.options,self.id.encode('utf8'),staticJsonString({}))
 		self.addFile(schemaFile=schemaFile,optionsFile=optionsFile,dataFile=dataFile)
+
+	def _setLogger(self,*args):
+		if len(args)>0 and args[0] is not None:
+			args = (unicode(self.__class__.__name__),)+args
+		else:
+			args = (self.__class__.__name__,)
+		self.loggerName = ".".join(args)
+		self.logger = logging.getLogger(self.loggerName)
+		if self.verbosity is not None:
+			if isinstance(self.verbosity,int):
+				self.logger.setLevel(self.verbosity)
+			if isinstance(self.verbosity,bool) and self.verbosity:
+				self.logger.setLevel(logging.DEBUG)
+			self.logger.debug("Verbosity is set to {0}".format(unicode(self.verbosity)))
 
 	def addFile(self,schemaFile=None,optionsFile=None,dataFile=None):
 		if schemaFile is not None:
@@ -53,26 +67,24 @@ class JSAG3(object):
 			self.addData(dataFile)
 
 	def addSchema(self,schema):
-		logging.debug("[JSAG3] Add schema {0}".format(unicode(schema)))
+		self.logger.debug("Add schema {0}".format(unicode(schema)))
 		if isinstance(schema,basestring):
 			# Assume schema is filename
 			self.schemaFile = schema
 			with open(self.schemaFile) as data_file:
 				content = data_file.read()
-				logging.debug("[JSAG3] Schema content: \n{0}".format(unicode(content)))
 				jsonschema.Draft4Validator.check_schema(json.loads(content))
 				self.schema = json.loads(content)
 			setattr(self.root.schema,self.id.encode('utf8'),staticJsonFile(self.schemaFile))
 		elif isinstance(schema,dict):
-			logging.debug("[JSAG3] Schema content: \n{0}".format(unicode(schema)))
 			jsonschema.Draft4Validator.check_schema(schema)
 			self.schema = schema
 			setattr(self.root.schema,self.id.encode('utf8'),staticJsonString(self.schema))
 		else:
-			raise TypeError("[JSAG3] addSchema accept basestring (for filename) or dict. {0} received".format(type(schema)))
+			raise TypeError("addSchema accept basestring (for filename) or dict. {0} received".format(type(schema)))
 
 	def addOptions(self,optionsFile):
-		logging.debug("[JSAG3] Add options {0}".format(unicode(optionsFile)))
+		self.logger.debug("Add options {0}".format(unicode(optionsFile)))
 		if self.schema is None:
 			raise Exception("Schema has not been provided")
 		self.optionsFile = optionsFile
@@ -81,7 +93,7 @@ class JSAG3(object):
 		setattr(self.root.options,self.id.encode('utf8'),staticJsonFile(optionsFile))
 
 	def addData(self,dataFile):
-		logging.debug("[JSAG3] Add data {0}".format(unicode(dataFile)))
+		self.logger.debug("[JSAG3] Add data {0}".format(unicode(dataFile)))
 		if self.schema is None:
 			raise Exception("Schema has not been provided")
 		self.dataFile = dataFile
@@ -102,24 +114,24 @@ class JSAG3(object):
 			raise Exception("Datafile has not been provided")
 
 	def initDataFile(self):
-		logging.debug("[JSAG3] Initialize data '{0}' in {1}.".format(self.id,unicode(self.dataFile)))
+		self.logger.debug("Initialize data '{0}' in {1}.".format(self.id,unicode(self.dataFile)))
 		self.checkCompleted()
 
 		if 'type' in self.schema.keys() and self.schema['type'] == 'object':
-			logging.debug("[JSAG3] Data is 'object' initializing {}.")
+			self.logger.debug("Data is 'object' initializing {}.")
 			self.setValue({})
 		elif 'type' in self.schema.keys() and self.schema['type'] == 'array':
-			logging.debug("[JSAG3] Data is 'array' initializing [].")
+			self.logger.debug("Data is 'array' initializing [].")
 			self.setValue([])
 		else:
-			logging.debug("[JSAG3] Data is '{0}' initializing [].".format(self.schema['type']))
+			self.logger.debug("Data is '{0}' initializing [].".format(self.schema['type']))
 			self.setValue(None)
 
 		if os.path.isfile(self.dataFile):
 			with open(self.dataFile) as outfile:
 				existingData = json.load(outfile)
 				self.lastModified = os.path.getmtime(self.dataFile)
-				logging.debug("[JSAG3] Existing data:\n{0}".format(existingData))
+				self.logger.debug("[JSAG3] Existing data:\n{0}".format(existingData))
 			newData = existingData.copy()
 			newData.update({self.id:self.data})
 		else:
@@ -138,13 +150,13 @@ class JSAG3(object):
 				except:
 					raise Exception("Cannot parse {0}".format(dataFile))
 				if self.id in existingData.keys():
-					logging.debug("[JSAG3] data file {0} already contains data.".format(unicode(dataFile)))
+					self.logger.debug("Data file {0} already contains data.".format(unicode(dataFile)))
 					return True
 				else:
-					logging.debug("[JSAG3] data file {0} does not contain data '{1}'. Existing data: {2}".format(unicode(dataFile),self.id,existingData.keys()))
+					self.logger.debug("Data file {0} does not contain data '{1}'. Existing data: {2}".format(unicode(dataFile),self.id,existingData.keys()))
 					return False
 		else:
-			logging.debug("[JSAG3] data file {0} does not exist.".format(unicode(dataFile)))
+			self.logger.debug("Data file {0} does not exist.".format(unicode(dataFile)))
 			return False
 
 	def getConf(self,conf={}):

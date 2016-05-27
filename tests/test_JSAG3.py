@@ -9,39 +9,44 @@ import logging
 import tempfile
 import shutil
 import JSAG3
+import LogTestCase
 
 DEBUG=False
 
-class TestJSAG3(unittest.TestCase):
+class TestJSAG3(LogTestCase.LogTestCase):
 	def setUp(self):
 		self.absdir = os.path.abspath(os.path.dirname(__file__))
-	
+
 		# Complete test case
 		self.id1="conf1"
 		self.schemaFile1=self.absdir+"/JSAG3.jschem"
 		self.optionsFile1=self.absdir+"/JSAG3.jopt"
 		self.dataFile1=self.absdir+"/JSAG3.json"
-		
+
 		# Options file not exists
 		self.id2=self.id1
 		self.schemaFile2=self.schemaFile1
 		self.optionsFile2=None
 		self.dataFile2=self.dataFile1
-		
+
 		# Data file not exists
 		self.id3=self.id1
 		self.schemaFile3=self.schemaFile1
 		self.optionsFile3=self.optionsFile1
 		self.dataFile3=None
-		
+
 	def test_creation(self):
-		conf = self.creation(id=self.id1,schemaFile=self.schemaFile1,optionsFile=self.optionsFile1,dataFile=self.dataFile1)
+		conf = self.creation(
+			id=self.id1,
+			schemaFile=self.schemaFile1,
+			optionsFile=self.optionsFile1,
+			dataFile=self.dataFile1)
 		isinstance(conf,JSAG3.JSAG3)
-		
+
 	def test_creation_without_options(self):
 		conf = self.creation(id=self.id2,schemaFile=self.schemaFile2,optionsFile=self.optionsFile2,dataFile=self.dataFile2)
 		isinstance(conf,JSAG3.JSAG3)
-		
+
 	def test_creation_without_datafile(self):
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
@@ -53,7 +58,7 @@ class TestJSAG3(unittest.TestCase):
 			data = json.load(data_file)
 		self.assertEqual(data,{self.id3:[]})
 		os.remove(tmpfile)
-		
+
 	def test_addSchema_file(self):
 		with open(self.schemaFile2) as data_file:
 			schema = json.load(data_file)
@@ -61,7 +66,7 @@ class TestJSAG3(unittest.TestCase):
 		jsag3.addSchema(self.schemaFile2)
 		jsag3.addData(self.dataFile2)
 		self.assertEquals(getattr(jsag3.getRoot().schema,self.id2).index(),schema)
-		
+
 	def test_addSchema_dict(self):
 		with open(self.schemaFile2) as data_file:
 			schema = json.load(data_file)
@@ -69,7 +74,7 @@ class TestJSAG3(unittest.TestCase):
 		jsag3.addSchema(schema)
 		jsag3.addData(self.dataFile2)
 		self.assertEquals(getattr(jsag3.getRoot().schema,self.id2).index(),schema)
-		
+
 	def test_incomplete(self):
 		conf = self.creation(id=self.id2)
 		isinstance(conf,JSAG3.JSAG3)
@@ -83,24 +88,24 @@ class TestJSAG3(unittest.TestCase):
 			conf.checkCompleted()
 		except:
 			self.fail("conf2 should be completed")
-			
+
 	def test_getConf(self):
 		initial_conf = {'/'.encode('utf8'):{}}
 		conf = {'/data'.encode('utf8'): {'tools.caching.on': False}}
 		conf.update(initial_conf)
 		jsag3 = self.creation(id=self.id1,schemaFile=self.schemaFile1,optionsFile=self.optionsFile1,dataFile=self.dataFile1)
 		self.assertEquals(conf,jsag3.getConf(initial_conf))
-		
+
 	def test_getRoot(self):
 		jsag3 = self.creation(id=self.id1,schemaFile=self.schemaFile1,optionsFile=self.optionsFile1,dataFile=self.dataFile1)
 		self.assertTrue(hasattr(jsag3.getRoot(),"schema"))
 		self.assertTrue(hasattr(jsag3.getRoot(),"options"))
 		self.assertTrue(hasattr(jsag3.getRoot(),"data"))
-		
+
 	def test_updateData(self):
 		with open(self.dataFile1) as data_file:
 			data = json.load(data_file)[self.id1]
-			
+
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
 		self.assertFalse(os.path.isfile(tmpfile))
@@ -112,7 +117,7 @@ class TestJSAG3(unittest.TestCase):
 			newData = json.load(data_file)
 		self.assertEqual(newData,{self.id1:data})
 		os.remove(tmpfile)
-		
+
 	def test_save(self):
 		value = [{"keywords": [], "provider_type": "kat"}]
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
@@ -123,8 +128,8 @@ class TestJSAG3(unittest.TestCase):
 		with open(tmpfile) as data_file:
 			data = json.load(data_file)
 		self.assertEqual(data,{"conf":value})
-		os.remove(tmpfile)	
-		
+		os.remove(tmpfile)
+
 	def test_save_with_filename(self):
 		value = [{"keywords": [], "provider_type": "kat"}]
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
@@ -135,8 +140,8 @@ class TestJSAG3(unittest.TestCase):
 		with open(tmpfile) as data_file:
 			data = json.load(data_file)
 		self.assertEqual(data,{"conf":value})
-		os.remove(tmpfile)	
-		
+		os.remove(tmpfile)
+
 	def test_save_with_filename_and_content(self):
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
@@ -146,10 +151,10 @@ class TestJSAG3(unittest.TestCase):
 		jsag3.addData(tmpfile)
 		jsag3.save()
 		os.remove(tmpfile)
-		
+
 	def test_share_data_file(self):
 		value = [{"keywords": [], "provider_type": "kat"}]
-	
+
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
 		conf1 = self.creation(id="conf1",schemaFile=self.schemaFile3,optionsFile=self.optionsFile3,dataFile=tmpfile)
@@ -162,13 +167,13 @@ class TestJSAG3(unittest.TestCase):
 			data = json.load(data_file)
 		self.assertEqual(data,{"conf1":value,"conf2":value})
 		os.remove(tmpfile)
-		
+
 	def test_append(self):
 		value = {"keywords": [], "provider_type": "kat"}
 		conf = self.creation(id="conf",schemaFile=self.schemaFile3,optionsFile=self.optionsFile3,dataFile=None)
 		conf.append(value)
 		conf.append(value)
 		self.assertEqual(conf.getValue(),[value,value])
-		
+
 	def creation(self,id,schemaFile=None,optionsFile=None,dataFile=None):
 		return JSAG3.JSAG3(id,schemaFile,optionsFile,dataFile,verbosity=DEBUG)
