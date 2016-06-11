@@ -10,7 +10,6 @@ import tzlocal
 PASSWORDMASK='********'
 
 def updateData(dataSrc,dataDst,schema):
-	logging.debug("[JSAG3.updateData] Update data from\n{0}\n --to--\n{1}.".format(dataSrc,dataDst))
 	if 'type' in schema.keys() and schema['type'] == 'object' and 'properties' in schema.keys():
 		result = {}
 		for key in schema['properties'].keys():
@@ -35,7 +34,6 @@ def updateData(dataSrc,dataDst,schema):
 		return dataDst
 
 def hidePasswords(data,schema):
-	logging.debug("[JSAG3.hidePasswords] Hidepassword of {0}".format(unicode(data)))
 	if 'type' in schema.keys() and schema['type'] == 'object' and 'properties' in schema.keys():
 		result = {}
 		if data is not None:
@@ -53,9 +51,8 @@ def hidePasswords(data,schema):
 		return PASSWORDMASK
 	else:
 		return data
-		
+
 def string2datetime(data,schema):
-	logging.debug("[JSAG3.string2datetime] string2datetime of {0}".format(unicode(data)))
 	if 'type' in schema.keys() and schema['type'] == 'object' and 'properties' in schema.keys():
 		result = {}
 		if data is not None:
@@ -77,9 +74,8 @@ def string2datetime(data,schema):
 			return tzlocal.get_localzone().localize(dateutil.parser.parse(data))
 	else:
 		return data
-				
+
 def datetime2string(data,schema):
-	logging.debug("[JSAG3.datetime2string] datetime2string of {0}".format(unicode(data)))
 	if 'type' in schema.keys() and schema['type'] == 'object' and 'properties' in schema.keys():
 		result = {}
 		if data is not None:
