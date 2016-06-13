@@ -51,6 +51,11 @@ class JSAG3(object):
 			args = (self.__class__.__name__,)
 		self.loggerName = ".".join(args)
 		self.logger = logging.getLogger(self.loggerName)
+		if not len(self.logger.handlers):
+			handler = logging.StreamHandler()
+			formatter = logging.Formatter('%(asctime)s :: %(levelname)s :: %(message)s')
+			handler.setFormatter(formatter)
+			self.logger.addHandler(handler)
 		if self.verbosity is not None:
 			if isinstance(self.verbosity,int):
 				self.logger.setLevel(self.verbosity)
