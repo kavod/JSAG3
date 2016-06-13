@@ -57,11 +57,14 @@ class JSAG3(object):
 			handler.setFormatter(formatter)
 			self.logger.addHandler(handler)
 		if self.verbosity is not None:
-			if isinstance(self.verbosity,int):
+			if isinstance(self.verbosity,bool):
+				if self.verbosity:
+					self.logger.setLevel(logging.DEBUG)
+				else:
+					self.logger.setLevel(logging.WARNING)
+			elif isinstance(self.verbosity,int):
 				self.logger.setLevel(self.verbosity)
-			if isinstance(self.verbosity,bool) and self.verbosity:
-				self.logger.setLevel(logging.DEBUG)
-			self.logger.debug("Verbosity is set to {0}".format(unicode(self.verbosity)))
+			self.logger.debug("Verbosity is set to {0}".format(unicode(self.logger.getEffectiveLevel)))
 
 	def addFile(self,schemaFile=None,optionsFile=None,dataFile=None):
 		if schemaFile is not None:
