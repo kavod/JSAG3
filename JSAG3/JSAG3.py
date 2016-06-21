@@ -45,6 +45,7 @@ class JSAG3(object):
 		self.addFile(schemaFile=schemaFile,optionsFile=optionsFile,dataFile=dataFile)
 
 	def _setLogger(self,*args):
+		logging.getLogger(unicode(self.__class__.__name__)).propagate = False
 		if len(args)>0 and args[0] is not None:
 			args = (unicode(self.__class__.__name__),)+args
 		else:
@@ -53,7 +54,7 @@ class JSAG3(object):
 		self.logger = logging.getLogger(self.loggerName)
 		if not len(self.logger.handlers):
 			handler = logging.StreamHandler()
-			formatter = logging.Formatter('%(asctime)s :: %(levelname)s :: %(message)s')
+			formatter = logging.Formatter('%(asctime)s::%(levelname)s::%(name)s::%(message)s')
 			handler.setFormatter(formatter)
 			self.logger.addHandler(handler)
 		if self.verbosity is not None:
